@@ -14,7 +14,7 @@
 #  Construir:   docker build -t glubia .
 #  Sin runtime de GPU (imagen mas pequena):  --build-arg INTEL_GPU=0
 # ==========================================================================
-FROM ubuntu:24.04
+FROM ubuntu:25.10
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG INTEL_GPU=1
