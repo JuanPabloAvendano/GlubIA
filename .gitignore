@@ -4,6 +4,7 @@ modelos/
 openvino_env/
 venv/
 .venv/
+_temporal_claude/
 
 # Datos y secretos (sesiones, conversaciones, claves de API, cache de OpenVINO)
 datos/
