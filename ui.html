@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>{{TITULO}}</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230d1117'/><path d='M9 21V11h3.6c2.6 0 4.2 1.4 4.2 3.4 0 1.4-.8 2.4-2 2.9l2.6 3.7h-3.3l-2.1-3.2h-.4V21H9zm2.6-5.3h1c1 0 1.6-.4 1.6-1.2s-.6-1.2-1.6-1.2h-1v2.4z' fill='%235ee6a8'/><circle cx='22' cy='19' r='2.2' fill='%235ee6a8'/></svg>">
+<style>
+  :root{
+    --bg:#0b0e13; --bg2:#0f141b; --bg3:#141b24; --line:#1f2933;
+    --tx:#dce3ea; --tx2:#8b97a6; --tx3:#5d6a79;
+    --ac:#5ee6a8; --ac2:#2f8f68; --user:#7aa2f7; --err:#f7768e; --warn:#e0af68;
+    --mono:ui-monospace,"JetBrains Mono","Cascadia Code","SF Mono",Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --sidebar:262px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--tx);font:14px/1.55 var(--sans);
+    display:flex;overflow:hidden;-webkit-font-smoothing:antialiased;
+  }
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  input,textarea,select{font:inherit;color:inherit}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:#26313d;border-radius:5px}
+  ::-webkit-scrollbar-thumb:hover{background:#33414f}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* ---------- Login ---------- */
+  #login{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;
+    align-items:center;justify-content:center;padding:24px}
+  #login.on{display:flex}
+  .card{width:100%;max-width:340px;text-align:center}
+  .logo{font:600 26px/1 var(--sans);letter-spacing:-.5px;margin-bottom:6px}
+  .logo b{color:var(--ac)}
+  .card p{color:var(--tx2);font-size:13px;margin:0 0 22px}
+  .card input{width:100%;background:var(--bg3);border:1px solid var(--line);
+    border-radius:9px;padding:11px 13px;font-family:var(--mono);outline:none}
+  .card input:focus{border-color:var(--ac2)}
+  .card button{width:100%;margin-top:10px;background:var(--ac);color:#07110c;
+    font-weight:600;border-radius:9px;padding:11px}
+  .card button:disabled{opacity:.5;cursor:default}
+  #loginErr{color:var(--err);font-size:12.5px;min-height:18px;margin-top:10px}
+
+  /* ---------- Sidebar ---------- */
+  aside{width:var(--sidebar);flex:0 0 var(--sidebar);background:var(--bg2);
+    border-right:1px solid var(--line);display:flex;flex-direction:column;height:100%}
+  .side-top{padding:12px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;
+    letter-spacing:-.3px;margin-bottom:11px;padding:0 2px}
+  .brand span{color:var(--ac)}
+  .newchat{width:100%;background:var(--bg3);border:1px solid var(--line);
+    border-radius:8px;padding:8px;font-size:13px;font-weight:500;
+    display:flex;align-items:center;justify-content:center;gap:6px}
+  .newchat:hover{border-color:var(--ac2);color:var(--ac)}
+  #convs{flex:1;overflow-y:auto;padding:8px}
+  .conv{display:flex;align-items:center;gap:6px;border-radius:7px;padding:7px 8px;
+    cursor:pointer;font-size:13px;color:var(--tx2)}
+  .conv:hover{background:var(--bg3)}
+  .conv.on{background:var(--bg3);color:var(--tx)}
+  .conv .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .conv .x{opacity:0;font-size:16px;line-height:1;color:var(--tx3);padding:0 2px}
+  .conv:hover .x{opacity:1}
+  .conv .x:hover{color:var(--err)}
+  .side-bot{border-top:1px solid var(--line);padding:10px 12px}
+
+  /* ---------- Panel de estado ---------- */
+  .stat{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--tx2);
+    font-family:var(--mono);padding:3px 0}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--tx3);flex:0 0 7px}
+  .dot.ok{background:var(--ac);box-shadow:0 0 7px rgba(94,230,168,.65)}
+  .dot.no{background:var(--err)}
+  .stat .v{margin-left:auto;color:var(--tx)}
+  #spark{display:block;width:100%;height:22px;margin:6px 0 2px;opacity:.85}
+
+  /* ---------- Main ---------- */
+  main{flex:1;display:flex;flex-direction:column;min-width:0;height:100%}
+  header{display:flex;align-items:center;gap:10px;padding:9px 14px;
+    border-bottom:1px solid var(--line);background:var(--bg2);flex:0 0 auto}
+  .hb{border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:12.5px;
+    color:var(--tx2);display:flex;align-items:center;gap:6px}
+  .hb:hover{border-color:var(--ac2);color:var(--ac)}
+  .hb.on{border-color:var(--ac2);color:var(--ac)}
+  #hTitle{flex:1;font-size:13.5px;font-weight:500;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;color:var(--tx2)}
+  #burger{display:none}
+
+  /* ---------- Ajustes ---------- */
+  #cfg{display:none;border-bottom:1px solid var(--line);background:var(--bg2);
+    padding:13px 16px;gap:16px;flex-wrap:wrap;flex:0 0 auto}
+  #cfg.on{display:flex}
+  .fld{flex:1;min-width:190px}
+  .fld label{display:flex;justify-content:space-between;font-size:11.5px;
+    color:var(--tx2);margin-bottom:6px;font-family:var(--mono)}
+  .fld label b{color:var(--ac);font-weight:500}
+  input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;
+    background:var(--bg3);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;
+    border-radius:50%;background:var(--ac);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;
+    background:var(--ac);cursor:pointer}
+  .fld.wide{flex-basis:100%}
+  #sysPrompt{width:100%;height:80px;background:var(--bg);border:1px solid var(--line);
+    border-radius:8px;padding:9px 11px;font:12.5px/1.5 var(--mono);resize:vertical;outline:none}
+  #sysPrompt:focus{border-color:var(--ac2)}
+
+  /* ---------- Transcript ---------- */
+  #chat{flex:1;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth}
+  #inner{max-width:880px;margin:0 auto;padding:22px 20px 8px}
+  .turn{display:flex;gap:14px;padding:14px 0}
+  .turn+.turn{border-top:1px solid #131a22}
+  .gutter{flex:0 0 62px;font:600 10.5px/1.6 var(--mono);letter-spacing:.09em;
+    text-transform:uppercase;padding-top:2px;text-align:right;color:var(--tx3)}
+  .turn.user .gutter{color:var(--user)}
+  .turn.ai .gutter{color:var(--ac)}
+  .body{flex:1;min-width:0;overflow-wrap:anywhere}
+  .body>*:first-child{margin-top:0}
+  .body>*:last-child{margin-bottom:0}
+  .body p{margin:0 0 .75em}
+  .body ul,.body ol{margin:.3em 0 .8em;padding-left:1.3em}
+  .body li{margin:.18em 0}
+  .body h1,.body h2,.body h3{margin:1.1em 0 .5em;line-height:1.3;font-weight:600}
+  .body h1{font-size:1.28em}.body h2{font-size:1.16em}.body h3{font-size:1.05em}
+  .body blockquote{margin:.6em 0;padding-left:11px;border-left:2px solid var(--line);color:var(--tx2)}
+  .body hr{border:0;border-top:1px solid var(--line);margin:1em 0}
+  .body a{color:var(--user)}
+  .body table{border-collapse:collapse;margin:.6em 0;font-size:13px;display:block;overflow-x:auto}
+  .body th,.body td{border:1px solid var(--line);padding:5px 9px;text-align:left;
+    overflow-wrap:normal;word-break:normal}
+  .body th{background:var(--bg3)}
+  .ic{background:var(--bg3);border:1px solid var(--line);border-radius:4px;
+    padding:1px 5px;font:.88em var(--mono);color:var(--ac)}
+  .turn.user .body{color:#c3ceda}
+
+  /* ---------- Bloques de codigo ---------- */
+  .cb{margin:.7em 0;border:1px solid var(--line);border-radius:9px;
+    background:#080b10;overflow:hidden}
+  .cb-h{display:flex;align-items:center;gap:8px;padding:5px 10px;
+    background:var(--bg3);border-bottom:1px solid var(--line)}
+  .cb-h .lang{font:11px var(--mono);color:var(--tx2);letter-spacing:.05em;flex:1}
+  .cb-h button{font:11px var(--mono);color:var(--tx2);border:1px solid var(--line);
+    border-radius:5px;padding:2px 8px}
+  .cb-h button:hover{color:var(--ac);border-color:var(--ac2)}
+  .cb pre{margin:0;padding:11px 13px;overflow-x:auto;font:12.6px/1.55 var(--mono);
+    tab-size:4;color:#c8d3e0}
+  .cb.open .cb-h .lang::after{content:" · escribiendo";color:var(--ac);opacity:.8}
+  .cb pre i{font-style:normal}
+  .k{color:#c39ae6}.s{color:#96d98a}.c{color:#57657a;font-style:italic}
+  .n{color:#e5a06a}.f{color:#79b8ff}.o{color:#8fa3b8}.v{color:#f0a8b4}
+
+  .caret{display:inline-block;width:7px;height:14px;background:var(--ac);
+    vertical-align:-2px;animation:bl 1s steps(2) infinite}
+  @keyframes bl{50%{opacity:0}}
+  .err{color:var(--err);font-family:var(--mono);font-size:12.5px}
+  .cola{color:var(--tx3);font:12px var(--mono);margin-left:6px}
+
+  /* ---------- Composer ---------- */
+  footer{flex:0 0 auto;padding:10px 20px 14px;background:linear-gradient(transparent,var(--bg) 32%)}
+  .comp{max-width:880px;margin:0 auto;display:flex;gap:9px;align-items:flex-end;
+    background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 13px}
+  .comp:focus-within{border-color:var(--ac2)}
+  #ta{flex:1;background:none;border:0;outline:none;resize:none;max-height:210px;
+    padding:6px 0;line-height:1.5;font-size:14px}
+  #ta::placeholder{color:var(--tx3)}
+  #send{background:var(--ac);color:#07110c;border-radius:9px;width:36px;height:36px;
+    flex:0 0 36px;display:grid;place-items:center;font-size:16px;font-weight:700}
+  #send:disabled{background:var(--bg3);color:var(--tx3)}
+  #send.stop{background:var(--err);color:#180a0d}
+  .hint{max-width:880px;margin:6px auto 0;font:11px var(--mono);color:var(--tx3);
+    display:flex;gap:12px}
+  .hint .r{margin-left:auto}
+
+  .empty{text-align:center;color:var(--tx3);padding:56px 20px}
+  .empty h2{color:var(--tx2);font-size:16px;font-weight:500;margin:0 0 6px}
+  .empty p{font-size:13px;margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
+  .chip{border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-size:12.5px;color:var(--tx2)}
+  .chip:hover{border-color:var(--ac2);color:var(--ac)}
+
+  #toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,16px);
+    background:var(--bg3);border:1px solid var(--line);border-radius:8px;
+    padding:8px 15px;font-size:12.5px;opacity:0;pointer-events:none;
+    transition:.22s;z-index:60}
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+  #scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:19}
+
+  @media (max-width:760px){
+    aside{position:fixed;left:0;top:0;bottom:0;z-index:20;transform:translateX(-100%);
+      transition:transform .2s}
+    aside.on{transform:none}
+    #scrim.on{display:block}
+    #burger{display:flex}
+    #inner{padding:16px 13px 4px}
+    .gutter{flex:0 0 40px;font-size:9.5px}
+    .turn{gap:9px}
+    footer{padding:8px 12px 12px}
+    .hb.hide-sm{display:none}
+    .hint span:first-child{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login">
+  <form class="card" id="loginForm" autocomplete="on">
+    <div class="logo">Glub<b>IA</b></div>
+    <p>Acceso restringido</p>
+    <input id="pw" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+    <button type="submit" id="loginBtn">Entrar</button>
+    <div id="loginErr"></div>
+  </form>
+</div>
+
+<div id="scrim"></div>
+
+<!-- ===================== SIDEBAR ===================== -->
+<aside id="side">
+  <div class="side-top">
+    <div class="brand">Glub<span>IA</span></div>
+    <button class="newchat" id="newBtn">+ Nueva conversación</button>
+  </div>
+  <div id="convs"></div>
+  <div class="side-bot">
+    <canvas id="spark" width="240" height="22"></canvas>
+    <div class="stat"><i class="dot" id="dot"></i><span id="linkTxt">conectando…</span><span class="v" id="lat">—</span></div>
+    <div class="stat"><span>dispositivo</span><span class="v" id="dev">—</span></div>
+    <div class="stat"><span>modelo</span><span class="v" id="mdl">—</span></div>
+    <div class="stat"><span>rendimiento</span><span class="v" id="tps">—</span></div>
+  </div>
+</aside>
+
+<!-- ===================== MAIN ===================== -->
+<main>
+  <header>
+    <button class="hb" id="burger">☰</button>
+    <div id="hTitle">Nueva conversación</div>
+    <button class="hb" id="cfgBtn">⚙ Ajustes</button>
+    <button class="hb hide-sm" id="expBtn">↓ Exportar</button>
+    <button class="hb hide-sm" id="outBtn" style="display:none">Salir</button>
+  </header>
+
+  <div id="cfg">
+    <div class="fld">
+      <label>temperatura <b id="tVal">0.20</b></label>
+      <input type="range" id="temp" min="0" max="1.5" step="0.05" value="0.2">
+    </div>
+    <div class="fld">
+      <label>max_new_tokens <b id="mVal">1024</b></label>
+      <input type="range" id="maxt" min="128" max="4096" step="128" value="1024">
+    </div>
+    <div class="fld wide">
+      <label>prompt de sistema <b id="resetSys" style="cursor:pointer">restaurar</b></label>
+      <textarea id="sysPrompt" spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <div id="chat"><div id="inner"></div></div>
+
+  <footer>
+    <div class="comp">
+      <textarea id="ta" rows="1" placeholder="Escribe tu consulta…" spellcheck="false"></textarea>
+      <button id="send" title="Enviar">↑</button>
+    </div>
+    <div class="hint">
+      <span>Enter envía · Shift+Enter salto de línea</span>
+      <span class="r" id="ctxInfo"></span>
+    </div>
+  </footer>
+</main>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* =======================================================================
+   GlubIA · interfaz local. Sin dependencias externas: arranca sin internet.
+   Se sirve desde el propio backend, asi que todas las rutas son relativas
+   y funciona igual en LAN (http) que a traves del tunel (https).
+   ======================================================================= */
+
+const $ = s => document.querySelector(s);
+const LS_CONV = "glubia.convs.v1", LS_SET = "glubia.settings.v1";
+const HIST_MAX = 60;                  // mensajes que se envian; el servidor recorta por TOKENS
+const esc = t => t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+/* ------------------------- Estado ------------------------- */
+let convs = [], actual = null, generando = false, ctrl = null;
+let trabajo = null;                   // id del trabajo en el servidor (para Detener)
+let servidorConv = false;             // el servidor guarda conversaciones (GlubIA 2)
+let sysDefecto = "";
+const lats = [];                      // ultimas mediciones de latencia
+let ajustes = { temp:0.2, maxt:1024, sys:null };
+
+const guardar = () => { try{
+  localStorage.setItem(LS_CONV, JSON.stringify(convs.slice(0,60)));
+  localStorage.setItem(LS_SET, JSON.stringify(ajustes));
+}catch(e){ toast("No se pudo guardar en este navegador"); } };
+
+function cargar(){
+  try{ convs = JSON.parse(localStorage.getItem(LS_CONV)||"[]") || []; }catch(e){ convs = []; }
+  try{ Object.assign(ajustes, JSON.parse(localStorage.getItem(LS_SET)||"{}")); }catch(e){}
+}
+
+/* -------------------------------------------------------------------------
+   Contexto que se envia al modelo. Las respuestas fallidas (errores, "sin
+   respuesta") y la pregunta que las produjo NO se reenvian: en la v1 el modelo
+   recibia sus propios mensajes de error como si fueran parte de la charla.
+   ------------------------------------------------------------------------- */
+const FALLO_V1 = /^\*\*No se pudo completar:\*\*|^\*\(sin respuesta\)\*$|\*\*Error del servidor:\*\*/;
+const fallida = m => !!m && m.role === "assistant" && (m.err || FALLO_V1.test(m.content));
+function contexto(msgs){
+  const out = [];
+  msgs.forEach((m, i) => {
+    if(fallida(m) || (m.role === "user" && fallida(msgs[i+1]))) return;
+    out.push({ role:m.role, content:m.content.replace(/\n\n\*\(detenido\)\*$/, "") });
+  });
+  return out.slice(-HIST_MAX);
+}
+
+/* -------------------------------------------------------------------------
+   Sincronizacion con el servidor: el historial te sigue entre equipos y
+   sobrevive a limpiar el navegador. Si el servidor no la ofrece o no hay red,
+   todo sigue funcionando solo con localStorage, como en la v1.
+   ------------------------------------------------------------------------- */
+const sucias = new Set();
+let tSync = null;
+function tocar(c){
+  c.act = Date.now();
+  if(servidorConv && c.msgs.length){ sucias.add(c.id); programarSubida(900); }
+}
+function programarSubida(ms){ clearTimeout(tSync); tSync = setTimeout(subir, ms); }
+async function subir(){
+  const ids = [...sucias]; sucias.clear();
+  for(const id of ids){
+    const c = convs.find(x => x.id === id);
+    if(!c || !c.msgs.length) continue;
+    try{
+      const r = await fetch("api/conversations/" + encodeURIComponent(id), {
+        method:"PUT", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ titulo:c.titulo, msgs:c.msgs, ts:c.ts, actualizada:c.act || c.ts })
+      });
+      if(!r.ok && r.status !== 400 && r.status !== 413) sucias.add(id);
+    }catch(e){ sucias.add(id); }
+  }
+  if(sucias.size) programarSubida(8000);   // sin red o sin sesion: reintento tranquilo
+}
+async function bajar(){
+  if(!servidorConv) return false;
+  try{
+    const r = await fetch("api/conversations", {cache:"no-store"});
+    if(!r.ok) return false;
+    const j = await r.json();
+    const borradas = new Set(j.deleted || []);
+    // Solo las 60 mas recientes: es lo que cabe en el localStorage (guardar() corta en 60).
+    const remotas = new Map((j.conversations || []).slice(0, 60).map(x => [x.id, x]));
+    let cambio = false;
+    const antes = convs.length;
+    convs = convs.filter(c => !borradas.has(c.id));          // borradas en otro equipo
+    if(convs.length !== antes) cambio = true;
+    for(const rc of remotas.values()){
+      const l = convs.find(c => c.id === rc.id);
+      const nueva = { id:rc.id, titulo:rc.titulo || "Conversación", msgs:rc.msgs || [], ts:rc.ts, act:rc.actualizada };
+      if(!l){ convs.push(nueva); cambio = true; }
+      else if((rc.actualizada || 0) > (l.act || 0)){ Object.assign(l, nueva); cambio = true; }
+      else if((l.act || 0) > (rc.actualizada || 0)) sucias.add(l.id);
+    }
+    convs.forEach(c => { if(!remotas.has(c.id) && c.msgs.length) sucias.add(c.id); });  // solo locales
+    if(cambio){
+      convs.sort((a, b) => (b.act || b.ts || 0) - (a.act || a.ts || 0));
+      if(!conv()) actual = convs.length ? convs[0].id : null;
+    }
+    if(sucias.size) programarSubida(300);
+    return cambio;
+  }catch(e){ return false; }
+}
+
+/* =======================================================================
+   Resaltado de sintaxis escrito a mano (sin librerias)
+   Se escapa &,<,> primero; las comillas quedan intactas y el tokenizador
+   puede reconocer cadenas sin pelearse con las entidades HTML.
+   ======================================================================= */
+const LANGS = {
+  python:{ kw:"and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield None True False self match case",
+           com:"#[^\\n]*",
+           str:"\"\"\"[\\s\\S]*?\"\"\"|'''[\\s\\S]*?'''|\"(?:\\\\.|[^\"\\\\\\n])*\"|'(?:\\\\.|[^'\\\\\\n])*'" },
+  javascript:{ kw:"async await break case catch class const continue default delete do else export extends finally for from function if import in instanceof let new of return static super switch this throw try typeof var void while yield true false null undefined",
+           com:"/\\*[\\s\\S]*?\\*/|//[^\\n]*",
+           str:"`(?:\\\\[\\s\\S]|[^`\\\\])*`|\"(?:\\\\.|[^\"\\\\\\n])*\"|'(?:\\\\.|[^'\\\\\\n])*'" },
+  bash:{ kw:"if then else elif fi for while do done case esac function return export local readonly source alias unset shift trap set echo cd sudo apt systemctl grep sed awk chmod chown mkdir rm cp mv ln find xargs curl wget tar ssh scp systemd journalctl ufw iptables",
+           com:"#[^\\n]*",
+           str:"\"(?:\\\\.|[^\"\\\\])*\"|'[^']*'" },
+  json:{ kw:"true false null", com:"#[^\\n]*", str:"\"(?:\\\\.|[^\"\\\\])*\"" },
+  sql:{ kw:"select from where insert into values update set delete create table drop alter add primary key foreign references index join left right inner outer on group by order having limit offset distinct as and or not null in like between union all case when then else end",
+           com:"--[^\\n]*", str:"'(?:''|[^'])*'" },
+  c:{ kw:"auto break case char const continue default do double else enum extern float for goto if int long register return short signed sizeof static struct switch typedef union unsigned void volatile while include define ifndef endif nullptr true false",
+           com:"/\\*[\\s\\S]*?\\*/|//[^\\n]*",
+           str:"\"(?:\\\\.|[^\"\\\\\\n])*\"|'(?:\\\\.|[^'\\\\\\n])*'" }
+};
+const ALIAS = { py:"python", python3:"python", js:"javascript", jsx:"javascript", ts:"javascript",
+  tsx:"javascript", node:"javascript", sh:"bash", shell:"bash", zsh:"bash", console:"bash",
+  bat:"bash", powershell:"bash", ps1:"bash", yaml:"json", yml:"json", toml:"json", ini:"json",
+  cpp:"c", "c++":"c", h:"c", hpp:"c", java:"c", go:"c", rust:"c", rs:"c", cs:"c", php:"c",
+  postgres:"sql", psql:"sql", mysql:"sql" };
+
+// Trozos que NO son comentario ni cadena: aqui si buscamos palabras clave.
+function codigoLlano(s, def){
+  if(!s) return "";
+  const kws = def._set || (def._set = new Set(def.kw.split(" ")));
+  return s
+    .replace(/\b([A-Za-z_$][\w$]*)\b(\s*\()?/g, (m, w, par) => {
+      if(kws.has(w)) return '<i class="k">'+w+'</i>' + (par||"");
+      if(par) return '<i class="f">'+w+'</i>' + par;
+      return m;
+    })
+    .replace(/\b(0[xXbB][0-9a-fA-F]+|\d+\.?\d*(?:[eE][-+]?\d+)?)\b/g, '<i class="n">$1</i>')
+    .replace(/(\$\{?\w+\}?|(?:^|\s)--?[a-zA-Z][\w-]*)/g, m => '<i class="v">'+m+'</i>');
+}
+
+function pintar(codigo, lang){
+  const def = LANGS[ALIAS[(lang||"").toLowerCase()] || (lang||"").toLowerCase()];
+  const t = esc(codigo);
+  if(!def) return t;
+
+  // Un solo barrido de izquierda a derecha: asi una almohadilla dentro de una
+  // cadena no se toma por comentario, ni una comilla dentro de un comentario
+  // abre una cadena. Sin marcadores temporales que luego haya que restaurar.
+  const nunca = "(?!x)x";
+  const re = new RegExp("(" + (def.com || nunca) + ")|(" + (def.str || nunca) + ")", "g");
+  let out = "", ultimo = 0, m;
+  while((m = re.exec(t)) !== null){
+    if(m[0] === ""){ re.lastIndex++; continue; }
+    out += codigoLlano(t.slice(ultimo, m.index), def);
+    out += '<i class="' + (m[1] !== undefined ? "c" : "s") + '">' + m[0] + '</i>';
+    ultimo = m.index + m[0].length;
+  }
+  return out + codigoLlano(t.slice(ultimo), def);
+}
+
+/* =======================================================================
+   Markdown minimo. Soporta vallas ``` sin cerrar mientras llega el stream:
+   la ultima valla abierta se renderiza igualmente como bloque en curso.
+   ======================================================================= */
+function inline(t){
+  return esc(t)
+    .replace(/`([^`\n]+)`/g, (m,c) => '<code class="ic">'+c+'</code>')
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+    .replace(/(^|[^*\w])\*([^*\n]+)\*/g,"$1<em>$2</em>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+
+function bloqueCodigo(codigo, lang, abierto){
+  const id = "c" + Math.random().toString(36).slice(2,9);
+  return '<div class="cb'+(abierto?" open":"")+'">'+
+      '<div class="cb-h"><span class="lang">'+esc(lang||"texto")+'</span>'+
+      '<button data-copy="'+id+'">copiar</button></div>'+
+      '<pre id="'+id+'">'+pintar(codigo, lang)+'</pre></div>';
+}
+
+function markdown(texto){
+  const lineas = texto.split("\n");
+  let html = "", buf = [], enCodigo = false, codigo = [], lang = "", lista = null;
+
+  const cerrarLista = () => { if(lista){ html += "</"+lista+">"; lista = null; } };
+  const volcar = () => {
+    if(!buf.length) return;
+    const t = buf.join("\n").trim();
+    if(t) html += "<p>" + inline(t).replace(/\n/g,"<br>") + "</p>";
+    buf = [];
+  };
+
+  const celdas = ln => ln.trim().replace(/^\||\|$/g,"").split("|").map(c => c.trim());
+  const esSeparador = ln => /^\s*\|?[\s:]*-{2,}[\s:|-]*\|?\s*$/.test(ln) && ln.includes("-");
+
+  for(let i = 0; i < lineas.length; i++){
+    const ln = lineas[i];
+    const valla = ln.match(/^\s*```(.*)$/);
+    if(valla){
+      if(!enCodigo){ volcar(); cerrarLista(); enCodigo = true; lang = valla[1].trim(); codigo = []; }
+      else { enCodigo = false; html += bloqueCodigo(codigo.join("\n"), lang, false); }
+      continue;
+    }
+    if(enCodigo){ codigo.push(ln); continue; }
+
+    // Tabla: cabecera con barras seguida de una linea de guiones.
+    if(ln.includes("|") && i + 1 < lineas.length && esSeparador(lineas[i+1]) && lineas[i+1].includes("|")){
+      volcar(); cerrarLista();
+      const cab = celdas(ln);
+      let t = "<table><thead><tr>" + cab.map(c => "<th>"+inline(c)+"</th>").join("") + "</tr></thead><tbody>";
+      let j = i + 2;
+      for(; j < lineas.length && lineas[j].includes("|") && lineas[j].trim(); j++){
+        const fila = celdas(lineas[j]);
+        t += "<tr>" + cab.map((_,k) => "<td>"+inline(fila[k] || "")+"</td>").join("") + "</tr>";
+      }
+      html += t + "</tbody></table>";
+      i = j - 1;
+      continue;
+    }
+
+    if(/^\s*(---|\*\*\*|___)\s*$/.test(ln)){ volcar(); cerrarLista(); html += "<hr>"; continue; }
+    const h = ln.match(/^(#{1,3})\s+(.*)$/);
+    if(h){ volcar(); cerrarLista(); const n = h[1].length; html += "<h"+n+">"+inline(h[2])+"</h"+n+">"; continue; }
+    const q = ln.match(/^>\s?(.*)$/);
+    if(q){ volcar(); cerrarLista(); html += "<blockquote>"+inline(q[1])+"</blockquote>"; continue; }
+    const ul = ln.match(/^\s*[-*+]\s+(.*)$/);
+    const ol = ln.match(/^\s*\d+[.)]\s+(.*)$/);
+    if(ul || ol){
+      volcar();
+      const tag = ul ? "ul" : "ol";
+      if(lista !== tag){ cerrarLista(); html += "<"+tag+">"; lista = tag; }
+      html += "<li>" + inline((ul||ol)[1]) + "</li>";
+      continue;
+    }
+    if(!ln.trim()){ volcar(); cerrarLista(); continue; }
+    buf.push(ln);
+  }
+  volcar(); cerrarLista();
+  // Valla aun sin cerrar: el modelo sigue escribiendo dentro del bloque.
+  if(enCodigo) html += bloqueCodigo(codigo.join("\n"), lang, true);
+  return html;
+}
+
+/* ------------------------- Conversaciones ------------------------- */
+const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+function conv(){ return convs.find(c => c.id === actual) || null; }
+
+function crear(){
+  const c = { id:nuevoId(), titulo:"Nueva conversación", msgs:[], ts:Date.now() };
+  convs.unshift(c); actual = c.id; guardar(); pintarLista(); render(); $("#ta").focus();
+  if(innerWidth <= 760) cerrarSide();
+}
+
+function borrar(id, ev){
+  ev.stopPropagation();
+  convs = convs.filter(c => c.id !== id);
+  sucias.delete(id);
+  if(servidorConv) fetch("api/conversations/" + encodeURIComponent(id), {method:"DELETE"}).catch(() => {});
+  if(actual === id) actual = convs.length ? convs[0].id : null;
+  if(!convs.length) crear(); else { guardar(); pintarLista(); render(); }
+}
+
+function pintarLista(){
+  const cont = $("#convs");
+  cont.innerHTML = "";
+  convs.forEach(c => {
+    const d = document.createElement("div");
+    d.className = "conv" + (c.id === actual ? " on" : "");
+    d.innerHTML = '<span class="t"></span><span class="x">×</span>';
+    d.querySelector(".t").textContent = c.titulo;
+    d.onclick = () => { actual = c.id; pintarLista(); render(); if(innerWidth<=760) cerrarSide(); };
+    d.querySelector(".x").onclick = e => borrar(c.id, e);
+    cont.appendChild(d);
+  });
+}
+
+const SUGE = ["Endurecer SSH en Debian 12","Script bash de backup incremental con rsync",
+              "Unidad systemd que reinicie el servicio al fallar","Explica el patrón Repository con Python"];
+
+function render(){
+  const c = conv(), cont = $("#inner");
+  $("#hTitle").textContent = c ? c.titulo : "Nueva conversación";
+  if(!c || !c.msgs.length){
+    cont.innerHTML = '<div class="empty"><h2>Modelo local, en tu propia máquina</h2>'+
+      '<p>Ninguna consulta sale de tu red.</p><div class="chips">'+
+      SUGE.map(s => '<button class="chip">'+esc(s)+'</button>').join("")+'</div></div>';
+    cont.querySelectorAll(".chip").forEach(b => b.onclick = () => { $("#ta").value = b.textContent; enviar(); });
+    $("#ctxInfo").textContent = "";
+    return;
+  }
+  cont.innerHTML = c.msgs.map(m => turnoHTML(m.role, m.content + (m.detenido ? "\n\n*(detenido)*" : ""))).join("");
+  $("#ctxInfo").textContent = c.msgs.length + " mensajes";
+  abajo();
+}
+
+function turnoHTML(role, texto){
+  const ai = role === "assistant";
+  return '<div class="turn '+(ai?"ai":"user")+'"><div class="gutter">'+(ai?"glubia":"tú")+'</div>'+
+         '<div class="body">'+(ai ? markdown(texto) : "<p>"+inline(texto).replace(/\n/g,"<br>")+"</p>")+'</div></div>';
+}
+
+const abajo = () => { const e = $("#chat"); e.scrollTop = e.scrollHeight; };
+
+/* ------------------------- Envio ------------------------- */
+async function enviar(){
+  if(generando){
+    if(trabajo) fetch("api/chat/cancel", { method:"POST", headers:{"Content-Type":"application/json"},
+                                           body:JSON.stringify({id:trabajo}) }).catch(() => {});
+    if(ctrl) ctrl.abort();
+    return;
+  }
+  const ta = $("#ta"), texto = ta.value.trim();
+  if(!texto) return;
+  if(!conv()) crear();
+  const c = conv();
+
+  c.msgs.push({ role:"user", content:texto });
+  tocar(c);
+  if(c.msgs.length === 1){
+    c.titulo = texto.slice(0,44) + (texto.length > 44 ? "…" : "");
+    $("#hTitle").textContent = c.titulo; pintarLista();
+  }
+  ta.value = ""; autoSize(); guardar(); render();
+
+  const cuerpo = {
+    prompt: texto,
+    history: contexto(c.msgs.slice(0,-1)),
+    system: ajustes.sys || undefined,
+    max_new_tokens: ajustes.maxt,
+    temperature: ajustes.temp
+  };
+
+  // Turno del modelo, en vivo
+  const cont = $("#inner");
+  const div = document.createElement("div");
+  div.className = "turn ai";
+  div.innerHTML = '<div class="gutter">glubia</div><div class="body"><span class="caret"></span></div>';
+  cont.appendChild(div); abajo();
+  const body = div.querySelector(".body");
+
+  generando = true; marcarBoton();
+  ctrl = new AbortController();
+  let acc = "", abortado = false, ultimo = 0, fallo = false, ctxServidor = null;
+  trabajo = null;
+
+  const repintar = (forzar) => {
+    const t = performance.now();
+    if(!forzar && t - ultimo < 55) return;      // ~18 fps: fluido sin quemar CPU
+    ultimo = t;
+    const pegado = $("#chat").scrollHeight - $("#chat").scrollTop - $("#chat").clientHeight < 120;
+    body.innerHTML = markdown(acc) + '<span class="caret"></span>';
+    if(pegado) abajo();
+  };
+
+  try{
+    let r = await fetch("api/chat/stream", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(cuerpo), signal:ctrl.signal
+    });
+
+    if(r.status === 401){ throw new Error("__401__"); }
+
+    if(r.status === 404 || !r.body){
+      // Servidor sin streaming: se cae al endpoint clasico sin romperse.
+      const r2 = await fetch("api/chat", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(cuerpo), signal:ctrl.signal
+      });
+      if(r2.status === 401) throw new Error("__401__");
+      const j = await r2.json();
+      if(!r2.ok) throw new Error(j.detail || "Error del servidor");
+      acc = (j.response || "").trim();
+      if(j.seconds) $("#tps").textContent = j.seconds + " s";
+    } else if(!r.ok){
+      let msg = "Error " + r.status;
+      try{ const j = await r.json(); msg = j.detail || msg; }catch(e){}
+      throw new Error(msg);
+    } else {
+      const rd = r.body.getReader(), dec = new TextDecoder();
+      let resto = "", fin = false;
+      while(!fin){
+        const { value, done } = await rd.read();
+        if(done) break;
+        resto += dec.decode(value, {stream:true});
+        const partes = resto.split("\n\n");
+        resto = partes.pop();
+        for(const p of partes){
+          const l = p.trim();
+          if(!l.startsWith("data:")) continue;
+          let d; try{ d = JSON.parse(l.slice(5).trim()); }catch(e){ continue; }
+          if(d.id){
+            trabajo = d.id;
+            if(d.queue > 0 && !acc) body.innerHTML = '<span class="caret"></span> <span class="cola">en cola: ' +
+              d.queue + (d.queue === 1 ? ' petición' : ' peticiones') + ' antes que la tuya</span>';
+          }
+          if(d.context) ctxServidor = d.context;
+          if(d.delta){ acc += d.delta; repintar(false); }
+          else if(d.error){ fallo = true; acc += "\n\n**Error del servidor:** " + d.error; repintar(true); }
+          else if(d.done){
+            // Cerramos al recibir el evento final en vez de esperar a que el
+            // socket muera: asi no dependemos de como delimite el servidor.
+            if(d.tps) $("#tps").textContent = d.tps + " tok/s";
+            fin = true; break;
+          }
+        }
+      }
+      try{ await rd.cancel(); }catch(e){}
+    }
+  }catch(e){
+    if(e.name === "AbortError"){ abortado = true; }
+    else if(e.message === "__401__"){
+      generando = false; marcarBoton(); div.remove();
+      c.msgs.pop(); guardar(); render();
+      $("#ta").value = texto; autoSize();          // no se pierde lo que escribiste
+      mostrarLogin("La sesión caducó. Vuelve a entrar.");
+      return;
+    }
+    else { fallo = true; acc += (acc ? "\n\n" : "") + "**No se pudo completar:** " + e.message; }
+  }
+
+  generando = false; ctrl = null; marcarBoton();
+  trabajo = null;
+  if(!acc){ acc = "*(sin respuesta)*"; fallo = true; }
+  const msg = { role:"assistant", content:acc };
+  if(abortado) msg.detenido = true;
+  if(fallo) msg.err = true;
+  body.innerHTML = markdown(acc + (abortado ? "\n\n*(detenido)*" : ""));
+  c.msgs.push(msg);
+  c.ts = Date.now();
+  tocar(c);
+  guardar();
+  $("#ctxInfo").textContent = c.msgs.length + " mensajes" + (ctxServidor ?
+    " · al modelo " + ctxServidor.mensajes + (ctxServidor.omitidos ? " (" + ctxServidor.omitidos + " antiguos fuera)" : "") +
+    " · " + ctxServidor.tokens_prompt + " tok" : "");
+  abajo(); $("#ta").focus();
+}
+
+function marcarBoton(){
+  const b = $("#send");
+  b.textContent = generando ? "■" : "↑";
+  b.classList.toggle("stop", generando);
+  b.title = generando ? "Detener" : "Enviar";
+}
+
+/* ------------------------- Copiar codigo ------------------------- */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-copy]");
+  if(!b) return;
+  const pre = document.getElementById(b.dataset.copy);
+  if(!pre) return;
+  const txt = pre.innerText;
+  const ok = () => { b.textContent = "copiado"; setTimeout(() => b.textContent = "copiar", 1400); };
+  // navigator.clipboard no existe en contextos no seguros: en LAN vamos por http.
+  if(navigator.clipboard && isSecureContext){
+    navigator.clipboard.writeText(txt).then(ok, () => legacy(txt, ok));
+  } else legacy(txt, ok);
+});
+function legacy(txt, ok){
+  const t = document.createElement("textarea");
+  t.value = txt; t.style.cssText = "position:fixed;opacity:0;top:0";
+  document.body.appendChild(t); t.select();
+  try{ document.execCommand("copy"); ok(); }catch(e){ toast("No se pudo copiar"); }
+  document.body.removeChild(t);
+}
+
+/* ------------------------- Exportar ------------------------- */
+function exportar(){
+  const c = conv();
+  if(!c || !c.msgs.length){ toast("No hay nada que exportar"); return; }
+  const fecha = new Date(c.ts || Date.now());
+  let md = "# " + c.titulo + "\n\n> GlubIA · " + fecha.toLocaleString("es") +
+           " · " + ($("#dev").textContent) + "\n\n---\n\n";
+  md += c.msgs.map(m => (m.role === "user" ? "## Tú\n\n" : "## GlubIA\n\n") + m.content).join("\n\n---\n\n") + "\n";
+  const nombre = (c.titulo.replace(/[^\w\sáéíóúñÁÉÍÓÚÑ-]/g,"").trim().replace(/\s+/g,"-").toLowerCase() || "glubia").slice(0,50);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([md], {type:"text/markdown;charset=utf-8"}));
+  a.download = nombre + ".md";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast("Descargado " + a.download);
+}
+
+/* ------------------------- Estado / latencia ------------------------- */
+function sparkline(){
+  const cv = $("#spark"), g = cv.getContext("2d");
+  const w = cv.width = cv.clientWidth * 2, h = cv.height = 44;
+  cv.style.height = "22px";
+  g.clearRect(0,0,w,h);
+  if(lats.length < 2) return;
+  const max = Math.max(...lats, 1) * 1.3, n = lats.length;
+  g.beginPath();
+  lats.forEach((v,i) => {
+    const x = (i/(n-1))*(w-4)+2, y = h - 4 - (v/max)*(h-10);
+    i ? g.lineTo(x,y) : g.moveTo(x,y);
+  });
+  g.strokeStyle = "#5ee6a8"; g.lineWidth = 2.5; g.lineJoin = "round"; g.stroke();
+  g.lineTo(w-2, h); g.lineTo(2, h); g.closePath();
+  g.fillStyle = "rgba(94,230,168,.12)"; g.fill();
+}
+
+async function ping(){
+  const t0 = performance.now();
+  try{
+    const r = await fetch("api/health", {cache:"no-store"});
+    const j = await r.json();
+    const ms = Math.round(performance.now() - t0);
+    lats.push(ms); if(lats.length > 16) lats.shift();   // ultimas 16 mediciones
+    $("#dot").className = "dot ok";
+    $("#linkTxt").textContent = "enlace activo";
+    $("#lat").textContent = ms + " ms";
+    $("#dev").textContent = j.device || "—";
+    $("#mdl").textContent = j.model || "—";
+    if(j.ready === false){ $("#dot").className = "dot"; $("#linkTxt").textContent = "cargando modelo…"; }
+    else if(j.queue > 0){ $("#linkTxt").textContent = "enlace activo · cola " + j.queue; }
+  }catch(e){
+    $("#dot").className = "dot no";
+    $("#linkTxt").textContent = "sin enlace";
+    $("#lat").textContent = "—";
+  }
+  sparkline();
+}
+
+/* ------------------------- Login ------------------------- */
+function mostrarLogin(msg){
+  $("#login").classList.add("on");
+  $("#loginErr").textContent = msg || "";
+  setTimeout(() => $("#pw").focus(), 60);
+}
+
+$("#loginForm").onsubmit = async e => {
+  e.preventDefault();
+  const btn = $("#loginBtn"); btn.disabled = true;
+  $("#loginErr").textContent = "";
+  try{
+    const r = await fetch("api/login", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({password: $("#pw").value})
+    });
+    const j = await r.json().catch(() => ({}));
+    if(r.ok){ $("#login").classList.remove("on"); $("#pw").value = ""; arrancarApp(); }
+    else $("#loginErr").textContent = j.detail || "Acceso denegado";
+  }catch(e){ $("#loginErr").textContent = "No hay conexión con el servidor"; }
+  btn.disabled = false;
+};
+
+/* ------------------------- UI varios ------------------------- */
+function toast(m){ const t = $("#toast"); t.textContent = m; t.classList.add("on");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 2200); }
+
+function autoSize(){ const ta = $("#ta"); ta.style.height = "auto";
+  ta.style.height = Math.min(ta.scrollHeight, 210) + "px"; }
+
+const cerrarSide = () => { $("#side").classList.remove("on"); $("#scrim").classList.remove("on"); };
+
+$("#ta").addEventListener("input", autoSize);
+$("#ta").addEventListener("keydown", e => {
+  if(e.key === "Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); enviar(); }
+});
+$("#send").onclick = enviar;
+$("#newBtn").onclick = crear;
+$("#expBtn").onclick = exportar;
+$("#burger").onclick = () => { $("#side").classList.toggle("on"); $("#scrim").classList.toggle("on"); };
+$("#scrim").onclick = cerrarSide;
+$("#cfgBtn").onclick = () => { const on = $("#cfg").classList.toggle("on"); $("#cfgBtn").classList.toggle("on", on); };
+$("#outBtn").onclick = async () => { await fetch("api/logout", {method:"POST"}); location.reload(); };
+
+$("#temp").oninput = e => { ajustes.temp = +e.target.value; $("#tVal").textContent = ajustes.temp.toFixed(2); guardar(); };
+$("#maxt").oninput = e => { ajustes.maxt = +e.target.value; $("#mVal").textContent = ajustes.maxt; guardar(); };
+$("#sysPrompt").oninput = e => { ajustes.sys = e.target.value; guardar(); };
+$("#resetSys").onclick = () => { ajustes.sys = null; $("#sysPrompt").value = sysDefecto; guardar(); toast("Prompt restaurado"); };
+
+addEventListener("resize", sparkline);
+addEventListener("keydown", e => {
+  if((e.ctrlKey || e.metaKey) && e.key === "k"){ e.preventDefault(); crear(); }
+});
+addEventListener("beforeunload", e => { if(generando){ e.preventDefault(); e.returnValue = ""; } });
+
+/* ------------------------- Arranque ------------------------- */
+function arrancarApp(){
+  cargar();
+  $("#temp").value = ajustes.temp; $("#tVal").textContent = (+ajustes.temp).toFixed(2);
+  $("#maxt").value = ajustes.maxt; $("#mVal").textContent = ajustes.maxt;
+  $("#sysPrompt").value = ajustes.sys != null ? ajustes.sys : sysDefecto;
+  if(!convs.length) crear(); else { actual = convs[0].id; pintarLista(); render(); }
+  sincronizar();
+  ping(); clearInterval(window._pg); window._pg = setInterval(ping, 5000);
+  autoSize(); marcarBoton();
+  $("#ta").focus();
+}
+
+async function sincronizar(){
+  if(generando) return;
+  const antes = JSON.stringify(conv() ? conv().msgs : null);
+  if(await bajar()){
+    guardar(); pintarLista();
+    // Solo se repinta la conversacion abierta si cambio: no saltar el scroll en balde.
+    if(JSON.stringify(conv() ? conv().msgs : null) !== antes) render();
+  }
+}
+document.addEventListener("visibilitychange", () => { if(!document.hidden) sincronizar(); });
+
+(async function init(){
+  try{
+    const r = await fetch("api/session", {cache:"no-store"});
+    const j = await r.json();
+    sysDefecto = j.system_prompt || "";
+    servidorConv = j.conversations === true;
+    if(j.auth_required) $("#outBtn").style.display = "";
+    if(j.auth_required && !j.authenticated){ mostrarLogin(); ping(); return; }
+  }catch(e){ /* sin backend: la UI arranca igual y el panel marcara "sin enlace" */ }
+  arrancarApp();
+})();
+</script>
+</body>
+</html>

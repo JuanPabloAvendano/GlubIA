@@ -1,0 +1,88 @@
+# Integracion continua: cada push y cada pull request.
+#   1. calidad      ruff + pruebas con el motor falso (segundos)
+#   2. openvino     pruebas con openvino_genai real y un modelo pequeno (CPU)
+#   3. contenedor   construye la imagen y valida compose + Caddyfile
+# Una rama solo se fusiona a main si los tres pasan.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calidad:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - run: pip install -r requirements-dev.txt shellcheck-py
+      - run: ruff check .
+      - run: shellcheck -S warning scripts/*.sh iniciar.sh
+      - run: pytest -q -m "not openvino"
+
+  openvino:
+    runs-on: ubuntu-24.04
+    needs: calidad
+    env:
+      MODELO: OpenVINO/Qwen2.5-Coder-0.5B-Instruct-int4-ov
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - run: pip install -r requirements-dev.txt "huggingface_hub>=1.0"
+      - uses: actions/cache@v4
+        with:
+          path: modelos/ci
+          key: modelo-${{ env.MODELO }}
+      - name: Descargar modelo de prueba
+        run: |
+          [ -f modelos/ci/openvino_model.xml ] || hf download "$MODELO" --local-dir modelos/ci
+      - name: Pruebas con OpenVINO real
+        run: pytest -q -m openvino
+        env:
+          GLUBIA_TEST_MODELO: modelos/ci
+
+  contenedor:
+    runs-on: ubuntu-24.04
+    needs: calidad
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Construir imagen (sin publicar)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: glubia:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: La imagen arranca y responde (motor falso)
+        run: |
+          docker run -d --name glubia-ci -e GLUBIA_MOTOR=falso -e GLUBIA_PASS=ci -p 11434:11434 glubia:ci
+          for _ in $(seq 1 30); do curl -fsS localhost:11434/readyz && break; sleep 1; done
+          curl -fsS localhost:11434/readyz | grep -q '"status":"listo"'
+          docker exec glubia-ci cat /home/glubia/intel/openvino_telemetry | grep -qx 0
+          test "$(docker exec glubia-ci id -u)" = "1000"
+      - name: Validar compose y Caddyfile
+        run: |
+          cp .env.example .env && sed -i 's/^GLUBIA_PASS=.*/GLUBIA_PASS=ci/' .env
+          docker compose config --quiet
+          COMPOSE_FILE=compose.yaml:compose.cpu.yaml docker compose config --quiet
+          docker run --rm -v "$PWD/portafolio/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile

@@ -1,0 +1,122 @@
+# ==========================================================================
+#  GlubIA en Omarchy (o cualquier Linux con Docker)
+#
+#    cp .env.example .env        # y editalo
+#    docker compose up -d        # GlubIA + portafolio
+#    docker compose --profile tunel up -d    # + tunel Cloudflare con tu dominio
+#
+#  Topologia:
+#
+#    internet ─▶ tunel (cloudflared) ─┐   red "borde"        red "interna" (sin salida)
+#    LAN/host ─▶ :8080 / :8081 ───────┴─▶ web (Caddy) ───────▶ glubia :11434
+#
+#  * glubia vive SOLO en una red interna sin acceso a internet: aunque
+#    quisiera, no puede enviar nada fuera. Solo Caddy llega a el.
+#  * :8080 = portafolio publico (estatico + /api/preguntar y /api/info).
+#  * :8081 = GlubIA privado (tu UI y la API completa). No lo publiques en
+#    el tunel sin Cloudflare Access delante (ver docs/OMARCHY.md).
+#  * Los puertos se enlazan a 127.0.0.1 por defecto (WEB_BIND en .env).
+# ==========================================================================
+name: glubia
+
+services:
+  glubia:
+    image: ${GLUBIA_IMAGEN:-ghcr.io/cambia-esto/glubia}:${GLUBIA_TAG:-latest}
+    build:
+      context: .
+      args:
+        VERSION: ${GLUBIA_TAG:-dev}
+    restart: unless-stopped
+    # Variables explicitas (no env_file): asi el token del tunel u otros
+    # secretos de .env nunca entran en este contenedor.
+    environment:
+      GLUBIA_PASS: ${GLUBIA_PASS:?Define GLUBIA_PASS en .env}
+      GLUBIA_HORAS: ${GLUBIA_HORAS:-8}
+      GLUBIA_TITULO: ${GLUBIA_TITULO:-GlubIA}
+      GLUBIA_API_KEYS: ${GLUBIA_API_KEYS:-}
+      GLUBIA_DEVICE: ${GLUBIA_DEVICE:-GPU}
+      GLUBIA_CTX: ${GLUBIA_CTX:-8192}
+      GLUBIA_MAX_TOKENS: ${GLUBIA_MAX_TOKENS:-4096}
+      GLUBIA_MAX_SEG: ${GLUBIA_MAX_SEG:-300}
+      GLUBIA_COLA: ${GLUBIA_COLA:-8}
+      GLUBIA_PUBLICO: ${GLUBIA_PUBLICO:-1}
+      GLUBIA_PUBLICO_TOKENS: ${GLUBIA_PUBLICO_TOKENS:-350}
+      GLUBIA_PUBLICO_RPM: ${GLUBIA_PUBLICO_RPM:-6}
+      GLUBIA_PUBLICO_DIA: ${GLUBIA_PUBLICO_DIA:-80}
+      GLUBIA_PUBLICO_COLA: ${GLUBIA_PUBLICO_COLA:-3}
+      GLUBIA_CORS: ${GLUBIA_CORS:-}
+      GLUBIA_LOG: ${GLUBIA_LOG:-INFO}
+      GLUBIA_DATA: /data
+      GLUBIA_MODEL: /modelos/${GLUBIA_MODELO_DIR:-qwen2.5-coder-7b-int4-ov}
+      GLUBIA_PERFIL: /perfil/perfil.md
+      GLUBIA_HOST: 0.0.0.0
+      GLUBIA_PORT: "11434"
+      GLUBIA_PROXIES: 172.31.0.20/32        # solo Caddy puede indicar la IP real del visitante
+    volumes:
+      - glubia-datos:/data                  # secreto, conversaciones, claves, cache de OpenVINO
+      - ${GLUBIA_MODELOS:-./modelos}:/modelos:ro
+      - ./portafolio/perfil:/perfil:ro      # perfil.md: se relee en caliente al editarlo
+    devices:
+      - /dev/dri:/dev/dri                   # GPU Intel (compose.cpu.yaml lo quita)
+    group_add:
+      - "${RENDER_GID:-989}"                # GID del grupo de /dev/dri/renderD128 en el anfitrion
+    mem_limit: ${GLUBIA_MEM:-12g}
+    stop_grace_period: 20s
+    networks:
+      interna:
+        ipv4_address: 172.31.0.10
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - glubia
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${PUERTO_PORTAFOLIO:-8080}:8080"
+      - "${WEB_BIND:-127.0.0.1}:${PUERTO_PRIVADO:-8081}:8081"
+    volumes:
+      - ./portafolio/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./portafolio/sitio:/srv/portafolio:ro
+      - caddy-datos:/data
+      - caddy-config:/config
+    networks:
+      borde:
+        ipv4_address: 172.30.0.20
+      interna:
+        ipv4_address: 172.31.0.20
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  tunel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:-}     # vacio = cloudflared se niega a arrancar (ver docs/OMARCHY.md)
+    depends_on:
+      - web
+    networks:
+      borde:
+        ipv4_address: 172.30.0.10           # Caddy solo confia en esta IP para CF-Connecting-IP
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+networks:
+  interna:
+    internal: true                          # sin salida a internet
+    ipam:
+      config: [{ subnet: 172.31.0.0/24 }]
+  borde:
+    ipam:
+      config: [{ subnet: 172.30.0.0/24 }]
+
+volumes:
+  glubia-datos:
+  caddy-datos:
+  caddy-config:

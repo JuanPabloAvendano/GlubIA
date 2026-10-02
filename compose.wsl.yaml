@@ -1,0 +1,14 @@
+# Windows con Docker Desktop (WSL2) y GPU Intel. SIN PROBAR en tu equipo:
+# la ruta documentada por OpenVINO para WSL2 es /dev/dxg + /usr/lib/wsl.
+#   COMPOSE_FILE=compose.yaml:compose.wsl.yaml   (en .env)
+# Si /readyz dice CPU en vez de GPU, usa compose.cpu.yaml y sigue en Windows
+# con iniciar.bat, que ya aprovecha la GPU de forma nativa.
+services:
+  glubia:
+    devices: !override
+      - /dev/dxg:/dev/dxg
+    group_add: !reset []
+    volumes:
+      - /usr/lib/wsl:/usr/lib/wsl:ro
+    environment:
+      LD_LIBRARY_PATH: /usr/lib/wsl/lib

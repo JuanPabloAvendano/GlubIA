@@ -1,0 +1,28 @@
+# Pesados o locales: nunca al repositorio
+modelo_qwen_7b_ov/
+modelos/
+openvino_env/
+venv/
+.venv/
+
+# Datos y secretos (sesiones, conversaciones, claves de API, cache de OpenVINO)
+datos/
+.glubia_secret
+.env
+claves.json
+*.db
+*.db-wal
+*.db-shm
+
+# Copia de la version 1 (referencia local)
+respaldo_v1/
+
+# Resultados locales
+evaluaciones/
+despliegues.log
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/

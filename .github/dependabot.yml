@@ -1,0 +1,18 @@
+# Actualizaciones de dependencias por pull request semanal. El CI las prueba
+# (incluido OpenVINO real) antes de que decidas fusionarlas.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule: { interval: weekly, day: monday }
+    groups:
+      openvino:
+        patterns: ["openvino*"]
+      web:
+        patterns: ["fastapi", "starlette", "uvicorn", "pydantic*", "anyio"]
+  - package-ecosystem: docker
+    directory: "/"
+    schedule: { interval: weekly, day: monday }
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: monthly }

@@ -1,0 +1,15 @@
+# Finales de linea estables entre Windows y Omarchy:
+# un .sh con CRLF rompe el contenedor ("bash\r: No such file or directory")
+# y un .bat con solo LF puede fallar al saltar a etiquetas en cmd.
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+Dockerfile text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+Caddyfile text eol=lf
+.env.example text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.woff2 binary
+*.png binary

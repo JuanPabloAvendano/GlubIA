@@ -1,0 +1,67 @@
+# Publicacion: al empujar una etiqueta vX.Y.Z se construye y publica la imagen
+# en GitHub Container Registry y se crea la Release con su seccion del CHANGELOG.
+#
+#   git tag v2.1.0 && git push origin v2.1.0
+#
+# En Omarchy:  scripts/desplegar.sh v2.1.0
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: La etiqueta coincide con glubia/__init__.py
+        run: |
+          version="$(python3 -c 'import re;print(re.search(r"__version__ = \"(.+?)\"", open("glubia/__init__.py").read()).group(1))')"
+          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "::error::__version__=${version} pero la etiqueta es ${GITHUB_REF_NAME}"; exit 1; }
+
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/glubia
+          tags: |
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: VERSION=${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Notas de la version desde CHANGELOG.md
+        run: |
+          awk -v v="${GITHUB_REF_NAME#v}" '
+            $0 ~ "^## \\[" v "\\]" {imprimir=1; next}
+            /^## \[/ && imprimir {exit}
+            imprimir {print}' CHANGELOG.md > notas.md
+          [ -s notas.md ] || echo "Sin notas para ${GITHUB_REF_NAME} en CHANGELOG.md" > notas.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: notas.md

@@ -1,0 +1,9 @@
+# Lista blanca: solo entra en la imagen lo que se copia en el Dockerfile.
+# Sin esto, `docker build .` enviaria el modelo (4,5 GB) y openvino_env como contexto.
+*
+!glubia/
+!ui.html
+!glubia_server.py
+!requirements.txt
+**/__pycache__
+**/*.pyc

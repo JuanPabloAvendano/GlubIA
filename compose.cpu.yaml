@@ -1,0 +1,9 @@
+# Equipos sin GPU Intel (AMD, NVIDIA, VPS, maquinas virtuales): solo CPU.
+#   COMPOSE_FILE=compose.yaml:compose.cpu.yaml   (en .env)
+# Mas lento (~3-8 tok/s con el 7B segun la CPU), pero funciona en cualquier x86-64 con AVX2.
+services:
+  glubia:
+    devices: !reset []
+    group_add: !reset []
+    environment:
+      GLUBIA_DEVICE: CPU
