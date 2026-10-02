@@ -15,6 +15,6 @@ h11==0.16.0
 idna==3.18
 click==8.4.2
 typing-extensions==4.16.0
-typing-inspection==0.4.3
+typing-inspection==0.4.4
 annotated-types==0.8.0
 annotated-doc==0.0.5
