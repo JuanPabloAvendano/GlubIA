@@ -62,6 +62,6 @@ jobs:
             imprimir {print}' CHANGELOG.md > notas.md
           [ -s notas.md ] || echo "Sin notas para ${GITHUB_REF_NAME} en CHANGELOG.md" > notas.md
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           body_path: notas.md
