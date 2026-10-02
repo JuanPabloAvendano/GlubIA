@@ -1,8 +1,8 @@
 # Dependencias de ejecucion, fijadas a las versiones probadas (las mismas del
 # openvino_env de Windows). Las actualiza Dependabot via PR; el CI las prueba.
-openvino==2026.3.0
-openvino-genai==2026.3.0.0
-openvino-tokenizers==2026.3.0.0
+openvino==2026.4.0
+openvino-genai==2026.4.0.0
+openvino-tokenizers==2026.4.0.0
 openvino-telemetry==2025.2.0
 numpy==2.5.2
 fastapi==0.141.1
