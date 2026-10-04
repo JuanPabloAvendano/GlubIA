@@ -164,13 +164,16 @@ def test_lo_privado_pasa_antes_que_lo_publico(servidor, tmp_path):
     perfil = tmp_path / "perfil.md"
     perfil.write_text("# Juan\nHola.", encoding="utf-8")
     url, app = servidor(GLUBIA_FALSO_RETARDO="0.02", GLUBIA_PUBLICO="1", GLUBIA_PERFIL=str(perfil),
-                        GLUBIA_PUBLICO_RPM="100", GLUBIA_PUBLICO_COLA="5")
+                        GLUBIA_PUBLICO_RPM="100", GLUBIA_PUBLICO_COLA="5",
+                        # /readyz dice "listo" antes de que acabe el precalentado: sin esto,
+                        # el espia puede contar el precalentado como una pregunta publica mas.
+                        GLUBIA_PRECALENTAR="0")
     orden = []
     motor = app.state.glubia.motor
     original = motor.backend.generar
 
     def espia(mensajes, p, on_delta):
-        orden.append("publico" if "portafolio" in mensajes[0]["content"] else "privado")
+        orden.append("publico" if "Eres GlubIA, el asistente" in mensajes[0]["content"] else "privado")
         return original(mensajes, p, on_delta)
 
     motor.backend.generar = espia
@@ -229,3 +232,25 @@ def test_cancelar_en_cola_libera_la_plaza_al_momento(servidor):
     assert cierre_b < 1.0, f"B tardo {cierre_b:.2f}s en cerrarse"   # antes: hasta que A terminara
     assert libre == 0
     assert fin_b["done"] is True and fin_b["finish_reason"] == "cancelled"
+
+
+def test_peticion_sin_stream_abandonada_libera_el_modelo(servidor):
+    """Sin streaming tambien hay que notar que el cliente se fue (antes seguia ~19 s)."""
+    url, app = servidor(GLUBIA_FALSO_RETARDO="0.02")
+    motor = app.state.glubia.motor
+
+    async def prueba():
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30, read=0.6)) as c:
+            try:
+                await c.post(url + "/api/chat", json={"prompt": "x", "max_new_tokens": 500})
+            except httpx.ReadTimeout:
+                pass   # el cliente se cansa y cierra la conexion
+        t0 = time.monotonic()
+        while motor.actual is not None and time.monotonic() - t0 < 5:
+            await asyncio.sleep(0.05)
+        return time.monotonic() - t0, motor.ultimo
+
+    espera, ultimo = asyncio.run(prueba())
+    assert motor.actual is None, "la generacion siguio despues de abandonar la peticion"
+    assert espera < 3
+    assert ultimo["tokens"] < 200

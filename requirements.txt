@@ -1,20 +1,12 @@
-# Dependencias de ejecucion, fijadas a las versiones probadas (las mismas del
-# openvino_env de Windows). Las actualiza Dependabot via PR; el CI las prueba.
+# Dependencias DIRECTAS de GlubIA, fijadas a versiones probadas por el CI.
+# Las dependencias de estas (pydantic-core, starlette, anyio, numpy...) las resuelve pip.
+# Fijarlas aparte hacia que Dependabot propusiera combinaciones imposibles
+# (PR #8: pydantic-core 2.49 con pydantic 2.13.5, que exige otra version exacta).
+# Los tres paquetes de OpenVINO deben ir siempre en la misma version.
 openvino==2026.3.0
 openvino-genai==2026.3.0.0
 openvino-tokenizers==2026.3.0.0
-openvino-telemetry==2025.2.0
-numpy==2.5.2
 fastapi==0.141.1
-starlette==1.6.0
 uvicorn==0.52.1
 pydantic==2.13.4
-pydantic-core==2.46.4
-anyio==4.14.2
-h11==0.16.0
-idna==3.18
-click==8.4.2
-typing-extensions==4.16.0
-typing-inspection==0.4.3
-annotated-types==0.8.0
-annotated-doc==0.0.5
+segno==1.6.6

@@ -24,6 +24,7 @@ from .api_ui import SYSTEM_PROMPT_DEFECTO
 from .flujo import CABECERAS_SSE, eventos, recolectar, sse
 from .motor import PRIORIDAD_PRIVADA, PRIORIDAD_PUBLICA, Parametros
 from .seguridad import anonimizar
+from .texto import GuardiaCodigo, Texto, aviso_codigo
 
 log = logging.getLogger("glubia.api")
 router = APIRouter(prefix="/v1")
@@ -58,25 +59,25 @@ def _exigir_clave(request: Request) -> str:
 class ParteContenido(BaseModel):
     model_config = ConfigDict(extra="ignore")
     type: str = "text"
-    text: Optional[str] = None
+    text: Optional[Texto] = None
 
 
 class MensajeOA(BaseModel):
     model_config = ConfigDict(extra="ignore")
     role: Literal["system", "developer", "user", "assistant", "tool"]
-    content: Union[str, List[ParteContenido], None] = None
+    content: Union[Texto, List[ParteContenido], None] = None
 
 
 class SolicitudChat(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    model: Optional[str] = None
+    model: Optional[Texto] = Field(default=None, max_length=1000)
     messages: List[MensajeOA] = Field(min_length=1, max_length=1000)
     stream: bool = False
     max_tokens: Optional[int] = Field(default=None, ge=1, le=32768)
     max_completion_tokens: Optional[int] = Field(default=None, ge=1, le=32768)
     temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
     top_p: Optional[float] = Field(default=None, gt=0.0, le=1.0)
-    stop: Union[str, List[str], None] = None
+    stop: Union[Texto, List[Texto], None] = None
     n: Optional[int] = 1
     stream_options: Optional[dict] = None
 
@@ -189,11 +190,11 @@ async def chat_completions(req: SolicitudChat, request: Request, quien: str = De
 
 class MensajePublico(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(max_length=4000)
+    content: Texto = Field(max_length=4000)
 
 
 class Pregunta(BaseModel):
-    message: str = Field(min_length=1, max_length=8000)
+    message: Texto = Field(min_length=1, max_length=8000)
     history: List[MensajePublico] = Field(default_factory=list, max_length=40)
     stream: bool = True
 
@@ -236,7 +237,7 @@ async def publico_info(request: Request) -> dict:
 
 @router.post("/public/ask")
 async def publico_preguntar(req: Pregunta, request: Request):
-    est, (sistema, _, _) = _publico_activo(request)
+    est, (sistema, nombre, _) = _publico_activo(request)
     cfg = est.cfg
     mensaje = req.message.strip()
     if not mensaje:
@@ -264,20 +265,36 @@ async def publico_preguntar(req: Pregunta, request: Request):
     trabajo, posicion = est.motor.enviar(mensajes, params, PRIORIDAD_PUBLICA, "publico")
     log.info("publico: pregunta desde %s (posicion %d)", anonimizar(ip), posicion)
 
+    guardia = GuardiaCodigo()
     if not req.stream:
         texto, fin, error = await recolectar(request, trabajo)
         if error:
             raise ErrorPublico(status_code=500, detail="No pude responder ahora mismo. Intenta de nuevo.")
+        texto = guardia.agregar(texto) + guardia.fin()
+        if guardia.disparada:
+            log.info("publico: respuesta con codigo cortada")
+            return {"answer": (texto + "\n\n" + aviso_codigo(nombre)).strip(), "finish_reason": "stop"}
         return {"answer": texto, "finish_reason": (fin or {}).get("finish_reason")}
 
     async def cuerpo():
         yield sse({"id": trabajo.id, "queue": posicion})
         async for tipo, valor in eventos(request, trabajo):
             if tipo == "delta":
-                yield sse({"delta": valor})
+                limpio = guardia.agregar(valor)
+                if limpio:
+                    yield sse({"delta": limpio})
+                if guardia.disparada:
+                    trabajo.cancelar("codigo")
+                    log.info("publico: respuesta con codigo cortada")
+                    yield sse({"delta": "\n\n" + aviso_codigo(nombre)})
+                    yield sse({"done": True, "finish_reason": "stop"})
+                    return
             elif tipo == "error":
                 yield sse({"error": "No pude responder ahora mismo. Intenta de nuevo."})
             elif tipo == "fin":
+                resto = guardia.fin()
+                if resto:
+                    yield sse({"delta": resto})
                 yield sse({"done": True, "finish_reason": valor["finish_reason"]})
             elif tipo == "ping":
                 yield ": ping\n\n"

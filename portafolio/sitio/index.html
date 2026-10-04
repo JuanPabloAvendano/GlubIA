@@ -1,32 +1,27 @@
 <!doctype html>
+<!-- GENERADO por portafolio/construir.py desde portafolio/contenido/. No lo edites a mano. -->
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src &#x27;self&#x27;; script-src &#x27;self&#x27;; style-src &#x27;self&#x27;; img-src &#x27;self&#x27; data:; font-src &#x27;self&#x27;; connect-src &#x27;self&#x27;; media-src &#x27;self&#x27;; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;self&#x27;; form-action &#x27;self&#x27;">
 <title>Juan Pablo Avendaño</title>
-<meta name="description" content="Juan Pablo Avendaño Duque: comercio en línea, infraestructura propia y una IA que corre en su computador. Pregúntale lo que quieras saber de él.">
+<meta name="description" content="Juan Pablo Avendaño Duque: comercio en línea, infraestructura propia y una IA que corre en su propio equipo. Pregúntale lo que quieras saber de él.">
+<meta name="author" content="Juan Pablo Avendaño Duque">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Juan Pablo Avendaño">
-<meta property="og:description" content="Comercio en línea, servidores propios y una IA que corre en mi computador. Pregúntale.">
-<meta property="og:type" content="website">
-<!--
-  Si este sitio se publica en OTRO dominio que la IA (p. ej. Cloudflare Pages),
-  descomenta y pon la direccion publica del puerto del portafolio:
-  <meta name="glubia-api" content="https://api.tu-dominio.com">
-  Y en el .env del servidor: GLUBIA_CORS=https://tu-dominio.com
--->
+<meta property="og:description" content="Juan Pablo Avendaño Duque: comercio en línea, infraestructura propia y una IA que corre en su propio equipo. Pregúntale lo que quieras saber de él.">
+<meta property="og:type" content="profile">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="fuentes/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="estilo.css">
 <script src="chat.js" defer></script>
 </head>
-<body>
+<body data-contacto="1">
 <a class="saltar" href="#pregunta">Ir a preguntarle a la IA</a>
 
 <header class="cabecera">
-  <!-- EDITAR: tu nombre como quieras que se lea. -->
   <h1 class="nombre"><span>Juan Pablo</span> <span>Avendaño</span></h1>
-  <!-- REVISAR: una frase que diga que haces, sin adjetivos. -->
   <p class="bajada">Construyo canales de venta en línea, servidores propios y una IA que corre en mi computador, desde Colombia.</p>
 </header>
 
@@ -36,13 +31,14 @@
       <h2 id="t-charla">Pregúntale a mi IA</h2>
       <p class="estado" id="estado" data-estado="comprobando">
         <span class="luz" aria-hidden="true"></span>
-        <span id="estado-texto">Comprobando si está despierta…</span>
+        <span id="estado-texto" role="status">Comprobando si está despierta…</span>
       </p>
     </div>
     <p class="explica">Responde un modelo que vive en mi equipo, no un servicio en la nube. Sabe lo que yo le conté sobre mí y, si algo no lo sabe, te lo dice.</p>
 
-    <div class="transcripcion" id="transcripcion" aria-live="polite"></div>
-    <div class="sugerencias" id="sugerencias" aria-label="Preguntas sugeridas"></div>
+    <div class="transcripcion" id="transcripcion"></div>
+    <p class="oculto" id="anuncio" aria-live="polite"></p>
+    <div class="sugerencias" id="sugerencias" role="group" aria-label="Preguntas sugeridas"></div>
 
     <form class="pregunta" id="formulario">
       <label for="pregunta" class="oculto">Tu pregunta</label>
@@ -55,41 +51,56 @@
     </form>
   </section>
 
-  <section class="trabajo" aria-labelledby="t-trabajo">
+  <section class="seccion trabajo" aria-labelledby="t-trabajo">
     <h2 id="t-trabajo">En qué trabajo</h2>
-
-    <!-- REVISAR los tres textos: son un borrador con lo que ya me contaste. -->
     <article class="proyecto">
-      <h3>GlubIA</h3>
-      <p>Una IA que corre en mi portátil sobre la GPU integrada, con OpenVINO. Tiene interfaz web propia, una API compatible con la de OpenAI y ninguna conversación sale de casa. Es la que te responde arriba.</p>
+      <h3>GlubIA <span class="estado-proyecto">En desarrollo</span></h3>
+      <div>
+        <p>Una inteligencia artificial que corre completa en mi propio portátil. Tiene interfaz web, una API compatible con la de OpenAI y es la que responde las preguntas de esta página: ninguna conversación sale de mi equipo.</p>
+        <ul class="etiquetas" aria-label="Tecnologías"><li>IA local</li><li>Python</li><li>OpenVINO</li><li>Docker</li><li>Linux</li></ul>
+        <p class="enlaces-proyecto"><a href="https://github.com/JuanPabloAvendano/GlubIA" rel="noopener">Código en GitHub</a></p>
+      </div>
     </article>
-
     <article class="proyecto">
-      <h3>American Urban</h3>
-      <p>Tienda de ropa en línea que arranqué con una empresa de confección de Antioquia que no vendía por internet. La idea es llevar ese canal a más confeccionistas del país.
-        <a href="https://americanurban.mitiendanube.com/" rel="noopener">Ver la tienda</a></p>
+      <h3>American Urban <span class="estado-proyecto">En marcha</span></h3>
+      <div>
+        <p>Tienda de ropa en línea. Nació con el apoyo de una empresa de confección que no vendía por internet, y la idea es llevar ese canal a más confeccionistas del país.</p>
+        <ul class="etiquetas" aria-label="Tecnologías"><li>Comercio electrónico</li><li>Confección</li><li>Logística</li></ul>
+        <p class="enlaces-proyecto"><a href="https://americanurban.mitiendanube.com/" rel="noopener">Ver la tienda</a></p>
+      </div>
     </article>
-
     <article class="proyecto">
-      <h3>Seguridad</h3>
-      <p>Aprendo pentesting montando laboratorios propios en la nube para practicar contra mis propios sistemas, y participo en eventos de hacking de caja negra organizados por empresas.</p>
+      <h3>Nodo de red <span class="estado-proyecto">Herramienta propia</span></h3>
+      <div>
+        <p>Programa para pasar archivos entre mis equipos de la red local con aprobación por PIN y permisos que caducan solos.</p>
+        <ul class="etiquetas" aria-label="Tecnologías"><li>Python</li><li>Redes</li><li>Seguridad</li></ul>
+        
+      </div>
+    </article>
+    <article class="proyecto">
+      <h3>Ciberseguridad <span class="estado-proyecto">Aprendizaje continuo</span></h3>
+      <div>
+        <p>Aprendo seguridad ofensiva montando laboratorios propios en la nube para practicar contra mis propios sistemas, y participo en eventos de hacking de caja negra organizados por empresas.</p>
+        <ul class="etiquetas" aria-label="Tecnologías"><li>Pentesting</li><li>Laboratorios</li><li>Linux</li></ul>
+        
+      </div>
     </article>
   </section>
 
-  <section class="contacto" aria-labelledby="t-contacto">
+  <section class="seccion sobre" aria-labelledby="t-sobre">
+    <h2 id="t-sobre">Sobre mí</h2>
+    <p>Me gusta construir las herramientas que uso: desde una tienda de ropa en línea hasta el servidor y la inteligencia artificial que responden en esta página. Trabajo con la idea de que los datos de cada quien deben quedarse en su propio equipo siempre que se pueda.</p>
+  </section>
+  <section class="seccion contacto" aria-labelledby="t-contacto" id="contacto">
     <h2 id="t-contacto">Escríbeme</h2>
     <p>Si quieres trabajar conmigo o tienes una pregunta que la IA no supo responder:</p>
-    <!-- EDITAR: tus enlaces reales. Borra los que no uses. -->
-    <ul class="enlaces">
-      <li><a href="mailto:tu-correo@ejemplo.com">tu-correo@ejemplo.com</a></li>
-      <li><a href="https://github.com/tu-usuario" rel="me noopener">GitHub</a></li>
-      <li><a href="https://www.linkedin.com/in/tu-usuario" rel="me noopener">LinkedIn</a></li>
-    </ul>
+    <ul class="enlaces"><li><a href="https://github.com/JuanPabloAvendano" rel="noopener">github.com/JuanPabloAvendano</a></li></ul>
   </section>
 </main>
 
 <footer class="pie">
-  <p>Esta página no usa cookies ni rastreadores. Las preguntas a la IA no se guardan en mi equipo.</p>
+  <p>Esta página no usa cookies ni rastreadores. Las preguntas a la IA no se guardan en mi equipo.
+  <a href="cv.html">CV imprimible</a></p>
 </footer>
 </body>
 </html>

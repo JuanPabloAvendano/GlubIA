@@ -45,11 +45,16 @@ def _config(monkeypatch, tmp_path, **env):
     return cargar_config()
 
 
-def esperar_listo(cliente, intentos: int = 200) -> None:
-    for _ in range(intentos):
-        if cliente.get("/readyz").status_code == 200:
+def esperar_listo(cliente, segundos: float = 300) -> None:
+    """Espera a que cargue el modelo (el falso tarda ms; uno real de 7B en CPU, decenas de s)."""
+    limite = time.monotonic() + segundos
+    while time.monotonic() < limite:
+        r = cliente.get("/readyz")
+        if r.status_code == 200:
             return
-        time.sleep(0.02)
+        if r.json().get("status") == "error":
+            raise AssertionError(f"el modelo no cargo: {r.json().get('error')}")
+        time.sleep(0.05)
     raise AssertionError("el motor no quedo listo")
 
 
@@ -104,13 +109,14 @@ def servidor(monkeypatch, tmp_path):
         hilo.start()
         url = f"http://127.0.0.1:{puerto}"
         import httpx
-        for _ in range(300):
+        limite = time.monotonic() + 300
+        while time.monotonic() < limite:
             try:
                 if httpx.get(url + "/readyz", timeout=1).status_code == 200:
                     break
             except httpx.HTTPError:
                 pass
-            time.sleep(0.02)
+            time.sleep(0.05)
         arrancados.append((srv, hilo))
         return url, app
 

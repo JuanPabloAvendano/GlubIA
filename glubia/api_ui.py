@@ -15,6 +15,7 @@ from . import __version__
 from .flujo import CABECERAS_SSE, eventos, recolectar, sse
 from .motor import PRIORIDAD_PRIVADA, Parametros
 from .seguridad import COOKIE
+from .texto import Texto
 
 log = logging.getLogger("glubia.ui")
 router = APIRouter()
@@ -37,34 +38,35 @@ MAX_TEXTO = 200_000
 
 class Message(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(max_length=MAX_TEXTO)
+    content: Texto = Field(max_length=MAX_TEXTO)
 
 
 class PromptRequest(BaseModel):
-    prompt: str = Field(min_length=1, max_length=MAX_TEXTO)
+    prompt: Texto = Field(min_length=1, max_length=MAX_TEXTO)
     history: List[Message] = Field(default_factory=list, max_length=400)
-    system: Optional[str] = Field(default=None, max_length=20_000)
+    system: Optional[Texto] = Field(default=None, max_length=20_000)
     max_new_tokens: int = Field(default=1024, ge=16, le=8192)
     temperature: float = Field(default=0.2, ge=0.0, le=2.0)
 
 
 class LoginRequest(BaseModel):
-    password: str = Field(max_length=500)
+    password: Texto = Field(max_length=500)
+    codigo: Optional[Texto] = Field(default=None, max_length=20)   # verificacion en dos pasos
 
 
 class CancelRequest(BaseModel):
-    id: str = Field(max_length=64)
+    id: Texto = Field(max_length=64)
 
 
 class MensajeGuardado(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(max_length=MAX_TEXTO)
+    content: Texto = Field(max_length=MAX_TEXTO)
     err: Optional[bool] = None
     detenido: Optional[bool] = None
 
 
 class ConversacionIn(BaseModel):
-    titulo: str = Field(default="", max_length=300)
+    titulo: Texto = Field(default="", max_length=300)
     msgs: List[MensajeGuardado] = Field(default_factory=list, max_length=4000)
     ts: Optional[int] = None
     actualizada: Optional[int] = None
@@ -145,9 +147,13 @@ async def health(request: Request) -> dict:
 @router.get("/api/session")
 async def sesion(request: Request) -> dict:
     est = _estado(request)
+    nivel = est.sesiones.nivel_token(request.cookies.get(COOKIE)) if est.cfg.auth else 2
     return {
         "auth_required": est.cfg.auth,
         "authenticated": est.quien(request) is not None,
+        "totp_required": est.cfg.auth and est.identidad.activa,
+        "verified": nivel >= 2,
+        "mailbox": est.buzon is not None and est.cfg.auth,
         "system_prompt": SYSTEM_PROMPT_DEFECTO,
         "version": __version__,
         "conversations": est.conversaciones is not None,
@@ -167,14 +173,21 @@ def login(datos: LoginRequest, request: Request, response: Response) -> dict:
         raise HTTPException(status_code=429,
                             detail=f"Demasiados intentos fallidos. Reintenta en {restante // 60 + 1} min.",
                             headers={"Retry-After": str(restante)})
-    if not est.sesiones.password_correcta(datos.password):
+    con_codigo = est.identidad.activa
+    correcto = est.sesiones.password_correcta(datos.password)
+    if correcto and con_codigo:
+        correcto = est.identidad.verificar(datos.codigo)
+    if not correcto:
         n = est.fallos.registrar("login:" + ip)
         log.warning("[auth] intento fallido desde %s (%d/5)", ip, n)
-        raise HTTPException(status_code=401, detail="Contraseña incorrecta")
+        # Mismo mensaje para contrasena y codigo: no revela cual de los dos fallo.
+        raise HTTPException(status_code=401, detail="Contraseña o código incorrectos"
+                            if con_codigo else "Contraseña incorrecta")
     est.fallos.limpiar("login:" + ip)
     # Sin Secure a proposito: la misma cookie debe servir en la LAN (http) y a
     # traves del tunel (https). SameSite=Lax basta al ser todo mismo origen.
-    response.set_cookie(COOKIE, est.sesiones.crear_token(), max_age=est.cfg.sesion_horas * 3600,
+    response.set_cookie(COOKIE, est.sesiones.crear_token(2 if con_codigo else 1),
+                        max_age=est.cfg.sesion_horas * 3600,
                         httponly=True, samesite="lax", path="/")
     log.info("[auth] sesion iniciada desde %s", ip)
     return {"ok": True}

@@ -86,6 +86,10 @@ curl -N http://127.0.0.1:8080/api/preguntar -H "Content-Type: application/json" 
 - Va detrás de tus peticiones privadas en la cola y tiene su propio tope (`GLUBIA_PUBLICO_COLA`).
 - Errores: `{"error": "texto para mostrar tal cual al visitante"}`.
 - CORS solo para los orígenes de `GLUBIA_CORS` y solo en estas rutas.
+- Si el modelo empieza un bloque de código (` ``` `), la respuesta se corta ahí y se añade un aviso
+  de que el asistente no programa (`finish_reason: "stop"`).
+- Por Caddy solo pasan `POST /api/preguntar` y `GET /api/info` (más `OPTIONS` para CORS); cualquier
+  otro método recibe 404 sin llegar a GlubIA.
 
 ## Interfaz web (`/api/*`)
 
@@ -95,6 +99,11 @@ Las de la v1 siguen igual (`/api/chat`, `/api/chat/stream`, `/api/login`, `/api/
 - El stream emite además `{"id","queue"}` al principio y `{"context": {...}}` al empezar a generar
   (mensajes que llegaron al modelo, omitidos y tokens). Los clientes antiguos los ignoran.
 - `POST /api/chat/cancel` con `{"id": "…"}` detiene esa generación.
+- `POST /api/login` acepta `{"password": "…", "codigo": "123456"}`. Con la verificación en dos pasos
+  activa, el código es obligatorio y el error es el mismo si falla cualquiera de los dos.
+- `GET /api/session` informa además `totp_required`, `verified` (sesión iniciada con código) y
+  `mailbox` (buzón disponible).
+- Buzón (`/api/buzon/*`): ver `BUZON.md`.
 - `GET /api/conversations`, `PUT /api/conversations/{id}`, `DELETE /api/conversations/{id}`:
   historial sincronizado (`GLUBIA_CONVERSACIONES=0` lo desactiva).
 

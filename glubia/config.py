@@ -8,10 +8,11 @@ En el contenedor se fijan GLUBIA_DATA=/data y GLUBIA_MODEL=/modelos/...
 from __future__ import annotations
 
 import ipaddress
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -62,6 +63,20 @@ def _redes(nombre: str) -> Tuple[Red, ...]:
     return tuple(redes)
 
 
+def _json(nombre: str) -> Optional[Dict[str, Any]]:
+    """Objeto JSON en una variable de entorno; None si no esta definida."""
+    valor = _texto(nombre)
+    if not valor:
+        return None
+    try:
+        datos = json.loads(valor)
+    except ValueError as exc:
+        raise SystemExit(f"{nombre} no es JSON valido: {exc}") from None
+    if not isinstance(datos, dict):
+        raise SystemExit(f"{nombre} debe ser un objeto JSON, por ejemplo {{\"CLAVE\": \"valor\"}}")
+    return datos
+
+
 def _ruta(nombre: str, defecto: Path) -> Path:
     valor = _texto(nombre)
     return Path(valor).expanduser() if valor else defecto
@@ -86,6 +101,9 @@ class Config:
     max_seg: int
     cola_max: int
     cache_ov: bool
+    pipeline: str                       # auto | llm | vlm
+    ov_config: Dict[str, Any]           # propiedades extra de OpenVINO (GLUBIA_OV_CONFIG)
+    plantilla_extra: Optional[Dict[str, Any]]   # contexto de la plantilla; None = automatico
     # Red y acceso
     proxies: Tuple[Red, ...]
     api_keys_env: Tuple[str, ...]
@@ -93,6 +111,7 @@ class Config:
     docs: bool
     # Endpoint publico (portafolio)
     publico: bool
+    precalentar: bool
     perfil_path: Path
     publico_nombre: str
     publico_tokens: int
@@ -104,6 +123,13 @@ class Config:
     publico_max_chars: int
     publico_historial: int
     cors: Tuple[str, ...]
+    # Buzon (envio de archivos con verificacion de identidad)
+    buzon: bool
+    buzon_dir: Path
+    buzon_max_mb: int
+    buzon_cuota_gb: float
+    buzon_reserva_gb: float
+    buzon_parte_mb: int
     # Varios
     telemetria_ov: bool
     log_nivel: str
@@ -114,8 +140,19 @@ class Config:
         return self.base_dir / "ui.html"
 
     @property
+    def buzon_ui_path(self) -> Path:
+        return self.base_dir / "buzon.html"
+
+    @property
     def nombre_modelo(self) -> str:
         return "glubia-falso" if self.motor == "falso" else self.model_path.name
+
+
+def _pipeline() -> str:
+    valor = _texto("GLUBIA_PIPELINE", "auto").lower()
+    if valor not in ("auto", "llm", "vlm"):
+        raise SystemExit("GLUBIA_PIPELINE debe ser 'auto', 'llm' o 'vlm'")
+    return valor
 
 
 def cargar_config() -> Config:
@@ -123,9 +160,10 @@ def cargar_config() -> Config:
     if motor not in ("openvino", "falso"):
         raise SystemExit("GLUBIA_MOTOR debe ser 'openvino' o 'falso'")
 
+    data_dir = _ruta("GLUBIA_DATA", BASE_DIR / "datos")
     return Config(
         base_dir=BASE_DIR,
-        data_dir=_ruta("GLUBIA_DATA", BASE_DIR / "datos"),
+        data_dir=data_dir,
         motor=motor,
         model_path=_ruta("GLUBIA_MODEL", BASE_DIR / "modelo_qwen_7b_ov"),
         device=_texto("GLUBIA_DEVICE", "GPU").upper(),
@@ -140,11 +178,15 @@ def cargar_config() -> Config:
         max_seg=_entero("GLUBIA_MAX_SEG", 300, 10, 3600),
         cola_max=_entero("GLUBIA_COLA", 8, 1, 200),
         cache_ov=_bool("GLUBIA_CACHE_OV", True),
+        pipeline=_pipeline(),
+        ov_config=_json("GLUBIA_OV_CONFIG") or {},
+        plantilla_extra=_json("GLUBIA_PLANTILLA_EXTRA"),
         proxies=_redes("GLUBIA_PROXIES"),
         api_keys_env=_lista("GLUBIA_API_KEYS"),
         conversaciones=_bool("GLUBIA_CONVERSACIONES", True),
         docs=_bool("GLUBIA_DOCS", True),
         publico=_bool("GLUBIA_PUBLICO", False),
+        precalentar=_bool("GLUBIA_PRECALENTAR", True),
         perfil_path=_ruta("GLUBIA_PERFIL", BASE_DIR / "portafolio" / "perfil" / "perfil.md"),
         publico_nombre=_texto("GLUBIA_PUBLICO_NOMBRE"),
         publico_tokens=_entero("GLUBIA_PUBLICO_TOKENS", 350, 32, 2048),
@@ -156,6 +198,14 @@ def cargar_config() -> Config:
         publico_max_chars=_entero("GLUBIA_PUBLICO_MAX_CHARS", 600, 50, 4000),
         publico_historial=_entero("GLUBIA_PUBLICO_HISTORIAL", 6, 0, 20),
         cors=_lista("GLUBIA_CORS"),
+        buzon=_bool("GLUBIA_BUZON", True),
+        buzon_dir=_ruta("GLUBIA_BUZON_DIR", data_dir / "buzon"),
+        buzon_max_mb=_entero("GLUBIA_BUZON_MAX_MB", 10240, 1, 1024 * 1024),
+        buzon_cuota_gb=_decimal("GLUBIA_BUZON_CUOTA_GB", 100.0, 0.1, 100000.0),
+        buzon_reserva_gb=_decimal("GLUBIA_BUZON_RESERVA_GB", 10.0, 0.0, 100000.0),
+        # Cloudflare corta cualquier peticion de mas de 100 MB (planes Free y Pro):
+        # las partes deben quedar por debajo con margen.
+        buzon_parte_mb=_entero("GLUBIA_BUZON_PARTE_MB", 8, 1, 90),
         telemetria_ov=_bool("GLUBIA_TELEMETRIA_OV", False),
         log_nivel=_texto("GLUBIA_LOG", "INFO").upper(),
         falso_retardo=_decimal("GLUBIA_FALSO_RETARDO", 0.02, 0.0, 5.0),

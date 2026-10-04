@@ -1,82 +1,105 @@
-# Portafolio con IA: qué hay listo y qué falta
+# Portafolio: cómo se edita y cómo se publica
 
-## Lo que ya está
+## La idea
 
-- **`portafolio/sitio/`**: la página. HTML, CSS y JS sin dependencias ni rastreadores; la fuente
-  (Archivo, licencia OFL) va incluida, así que no se llama a ningún servicio externo.
-  La conversación con la IA ocupa el centro: muestra si está despierta, ocupada o dormida, acepta
-  preguntas sugeridas y responde en streaming.
-- **`portafolio/perfil/perfil.md`**: todo lo que la IA sabe de ti. Se relee al guardarlo.
-- **`portafolio/Caddyfile`**: sirve la página y expone de GlubIA solo `/api/preguntar` y `/api/info`.
-- **El endpoint público** en GlubIA, con persona fija, límites por IP y cola de baja prioridad
-  (ver `docs/API.md`).
+Todo el portafolio sale de **un solo archivo de datos** que editas tú:
 
-Para verlo hoy en tu Windows, sin Docker y sin cargar el modelo:
-
-```powershell
-cd C:\Users\juanp\GlubIA
-# consola 1: GlubIA con el motor simulado y el asistente publico activo
-$env:GLUBIA_MOTOR="falso"; $env:GLUBIA_PUBLICO="1"; .\openvino_env\Scripts\python.exe glubia_server.py
-# consola 2: la pagina, con las mismas rutas que pondra Caddy
-.\openvino_env\Scripts\python.exe scripts\vista_portafolio.py
+```
+portafolio/contenido/sitio.toml   ← quién eres, proyectos, contacto, medios, sugerencias
+portafolio/contenido/ia.md        ← (opcional) lo que solo usa la IA
+        │
+        └─ python portafolio/construir.py
+                ├─► sitio/index.html     la página (chat + proyectos + sobre mí + contacto)
+                ├─► sitio/cv.html        CV imprimible (Imprimir → Guardar como PDF), con QR a tu dominio
+                ├─► sitio/404.html       página de error
+                ├─► sitio/_headers       cabeceras de seguridad para Cloudflare Pages
+                ├─► sitio/robots.txt, sitemap.xml
+                └─► perfil/perfil.md     lo que sabe la IA (se recarga solo, sin reiniciar GlubIA)
 ```
 
-Abre `http://127.0.0.1:8080`. Sin `GLUBIA_MOTOR=falso` responde el modelo de verdad.
+Así la página, el CV y la IA nunca se contradicen, y añadir algo (un proyecto, un video de YouTube,
+un audio, un PDF) es **añadir datos, no rediseñar** (RT-03).
 
-## Lo que necesito de ti
+**Todo lo que pongas ahí es público** (RF-03): se publica en la página y la IA lo puede repetir. No
+hay forma de "ocultarle" algo al modelo; si no quieres que se sepa, no lo escribas.
 
-1. **Contenido de `perfil.md`.** Las líneas `REVISAR` son un borrador con lo que ya me contaste;
-   las `COMPLETAR`, huecos: ciudad, a qué te dedicas y qué buscas, habilidades reales, formación y
-   experiencia, y el canal de contacto que prefieres. Solo información que no te importe que sea
-   pública: un visitante insistente puede lograr que la IA repita cualquier línea.
-2. **Textos de la página** (`index.html`, marcados `EDITAR`/`REVISAR`): la frase de presentación, los
-   tres proyectos y tus enlaces (correo, GitHub, LinkedIn).
-3. **Una foto o imagen tuya** si quieres (`portafolio/sitio/img/`); la página funciona sin ella.
-4. **El dominio.**
-5. **Cuenta de Cloudflare** (gratis) para DNS y el túnel.
+## Editar
 
-## El dominio
+1. Abre `portafolio/contenido/sitio.toml`. Cada sección tiene comentarios con ejemplos.
+   - Los textos marcados `REVISAR` son un borrador general con lo que me contaste: reescríbelos con
+     tu voz.
+   - Un campo vacío (`""`) no se muestra.
+   - En `para_ia` de cada proyecto va lo que quieres que la IA sepa pero que no hace falta en la
+     página.
+   - `habilidades`, `experiencia`, `formacion` y `medios` aparecen en la página y en el CV en cuanto
+     les pongas contenido.
+2. Genera:
+   ```powershell
+   .\openvino_env\Scripts\python.exe portafolio\construir.py
+   ```
+   Basta Python 3.11 o superior. Para el código QR del CV hace falta `segno` (está en
+   `requirements.txt`: `pip install segno`); sin él, el CV sale sin QR y el CI lo marcará como desactualizado.
+3. Míralo:
+   ```powershell
+   # consola 1: GlubIA con el motor simulado y el asistente público
+   $env:GLUBIA_MOTOR="falso"; $env:GLUBIA_PUBLICO="1"; .\openvino_env\Scripts\python.exe glubia_server.py
+   # consola 2: la página con las mismas rutas que pondrá Caddy
+   .\openvino_env\Scripts\python.exe scripts\vista_portafolio.py
+   ```
+   Abre `http://127.0.0.1:8080`. Sin `GLUBIA_MOTOR=falso` responde el modelo de verdad.
+4. Haz commit de `contenido/` **y** de lo generado. El CI comprueba que lo generado esté al día
+   (`construir.py --comprobar`) y falla si editaste a mano un archivo generado.
 
-- A tu nombre, corto y fácil de dictar: `juanpabloavendano.com`, `avendano.dev`, `jpavendano.co`…
-  (comprueba disponibilidad; la ñ en dominios existe pero da problemas al escribirla y compartirla).
-- **Cloudflare Registrar** vende al costo, sin margen, y deja DNS y túnel en el mismo sitio.
-  Soporta `.com`, `.co` y `.dev`. Mira el precio de **renovación**, no solo el del primer año:
-  `.co` suele renovar bastante más caro que `.com`.
-- `.dev` obliga a usar HTTPS: no es problema, Cloudflare lo pone.
-- Si lo compras en otro registrador, cambia sus DNS a Cloudflare y todo lo demás es igual.
+### Medios (videos, audios, documentos)
 
-Con el dominio, "ubicador" fijo de tus servicios: `tu-dominio.com` (portafolio) y, si quieres,
-`ia.tu-dominio.com` (tu GlubIA privado detrás de Cloudflare Access). La URL deja de cambiar en cada
-reinicio, que era la limitación de `trycloudflare.com`.
+```toml
+[[medios]]
+tipo = "video"
+titulo = "Cómo funciona GlubIA"
+youtube = "ID-de-11-caracteres"     # se carga solo al pulsar (youtube-nocookie): sin rastreo hasta entonces
 
-## ¿Local o nube?
+[[medios]]
+tipo = "documento"
+titulo = "CV en PDF"
+url = "https://archivos.tu-dominio.com/cv.pdf"   # Cloudflare R2 o el propio Pages si es pequeño
+formato = "PDF"
+peso = "180 KB"
+```
 
-| Opción | Cómo | A favor | En contra |
+`construir.py` ajusta la política de seguridad de la página según lo que uses (YouTube, audios de
+otro dominio, la API en `api.tu-dominio.com`…). No hay que tocarla a mano.
+
+## Publicar
+
+Para publicar en tu dominio (pasos completos en `CLOUDFLARE.md`):
+
+1. En `sitio.toml`: `url = "https://tu-dominio.com"` y, con la página en Cloudflare Pages,
+   `api = "https://api.tu-dominio.com"`.
+2. `python portafolio/construir.py --publicar` — falla si queda algo por completar (por ejemplo, la
+   URL vacía, una marca `COMPLETAR` o la API apuntando a `http://`).
+3. Sube la carpeta `portafolio/sitio` a Cloudflare Pages.
+4. En el `.env` de Omarchy: `GLUBIA_PUBLICO=1` y `GLUBIA_CORS=https://tu-dominio.com`.
+
+| Dónde vive | Cómo | A favor | En contra |
 |---|---|---|---|
-| **A. Todo en Omarchy** | compose + túnel | 0 € al mes aparte del dominio; tus datos no salen | si apagas el equipo, cae también la página |
-| **B. Híbrida (recomendada)** | página en Cloudflare Pages; IA en Omarchy por el túnel | la página no cae nunca; si el equipo duerme, el chat lo dice y ofrece tu contacto | un paso más de configuración |
-| C. Todo en la nube | VPS de 8–16 GB con CPU | siempre encendido | pagas cada mes; el 7B en CPU va lento; los datos salen de casa |
+| **Pages + IA en Omarchy (recomendado)** | página en Pages; `api.` por el túnel | la página no cae nunca; si el equipo duerme, el chat lo dice y ofrece tu contacto | un paso más de configuración |
+| Todo en Omarchy | Caddy sirve la página y la IA | lo más rápido de montar (`docker compose --profile tunel up -d`) | si apagas el equipo cae también la página |
 
-**B, paso a paso:** sube `portafolio/sitio` a Cloudflare Pages (proyecto de "subida directa", sin
-build) con tu dominio; en el túnel publica `api.tu-dominio.com → http://web:8080`; en `index.html`
-activa `<meta name="glubia-api" content="https://api.tu-dominio.com">`; en `.env`,
-`GLUBIA_CORS=https://tu-dominio.com`. La página ya maneja el estado "dormida".
+Pasar de una a otra es mover la carpeta `sitio` y cambiar `api` en `sitio.toml`.
 
-Empezar con A es lo más rápido (ya funciona con `docker compose --profile tunel up -d`) y pasar a B
-es mover una carpeta.
+## Pendiente de tu parte
 
-## Privacidad y avisos
+1. Revisar los textos `REVISAR` de `sitio.toml` con tu voz.
+2. Correo y LinkedIn en `[[contacto]]` (con Email Routing puedes tener `hola@tu-dominio.com` gratis).
+3. Si quieres, más proyectos: Lilatex POS, Small-POS-Project, FlorLogic, Kioskeo Intenso… Con una
+   línea de cada uno basta para empezar.
+4. El dominio.
 
-- La página no usa cookies ni analítica, y las preguntas no se guardan: el servidor solo registra
-  la hora y una IP recortada (`181.52.x.x`) para detectar abusos.
-- Si algún día añades analítica, formularios o guardas conversaciones, en Colombia aplica la Ley
-  1581 de 2012 (protección de datos personales): necesitarías un aviso de privacidad.
-- El modelo puede equivocarse. Pide en `perfil.md` lo que no debe decir y añade casos a
-  `scripts/eval_casos.json` cuando veas una respuesta mala.
+## Privacidad
 
-## Modelo para la persona
-
-Qwen2.5-Coder-7B es un modelo de código: en conversación general en español funciona, pero no es su
-fuerte. Si las respuestas del portafolio te parecen rígidas, prueba un instruct general de la misma
-familia en formato OpenVINO (por ejemplo los de la organización `OpenVINO` en Hugging Face) con el
-flujo de `docs/PIPELINE.md` §5: descargar, evaluar y comparar antes de cambiar.
+- La página no usa cookies ni analítica; las preguntas no se guardan. El servidor solo registra la
+  hora y una IP recortada (`181.52.x.x`) para frenar abusos.
+- Si algún día añades analítica con cookies, formularios o guardas conversaciones, en Colombia aplica
+  la Ley 1581 de 2012: necesitarías un aviso de privacidad. Cloudflare Web Analytics no usa cookies.
+- El modelo puede equivocarse. Cuando veas una respuesta mala, añade el caso a
+  `scripts/eval_casos.json` (ver `MODELOS.md` y `PRUEBAS-AGENTES.md`).

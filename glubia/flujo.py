@@ -8,7 +8,6 @@ Starlette 1.6 / uvicorn 0.52 nunca ocurria: la GPU seguia hasta max_new_tokens.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import time
 from typing import AsyncIterator, Dict, Optional, Tuple
@@ -32,20 +31,28 @@ async def eventos(request: Request, trabajo: Trabajo, revisar_cada: float = 1.0,
                   ping_cada: float = 10.0) -> AsyncIterator[Tuple[str, object]]:
     """Itera los eventos del trabajo. Emite ("ping", None) si hay silencio
     (mientras espera en cola) para que proxies y tuneles no corten la conexion."""
-    ultimo = time.monotonic()
+    ultimo = revisado = time.monotonic()
     try:
         while True:
             try:
                 tipo, valor = await trabajo.siguiente(revisar_cada)
-            except asyncio.TimeoutError:
+            except TimeoutError:
+                tipo, valor = None, None
+            ahora = time.monotonic()
+            # Se mira si el cliente sigue ahi cada `revisar_cada` segundos aunque lleguen
+            # tokens sin parar: en las respuestas sin streaming no hay otra forma de saberlo
+            # (antes, una peticion abandonada seguia ocupando el modelo hasta el final).
+            if ahora - revisado >= revisar_cada:
+                revisado = ahora
                 if await request.is_disconnected():
                     trabajo.cancelar("desconexion")
                     return
-                if time.monotonic() - ultimo >= ping_cada:
-                    ultimo = time.monotonic()
+            if tipo is None:
+                if ahora - ultimo >= ping_cada:
+                    ultimo = ahora
                     yield "ping", None
                 continue
-            ultimo = time.monotonic()
+            ultimo = ahora
             yield tipo, valor
             if tipo == "fin":
                 return

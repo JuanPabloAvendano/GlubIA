@@ -6,8 +6,11 @@ backend real, asi que la cola, la cancelacion y el recorte de contexto que se
 prueban con el son exactamente los mismos que en produccion.
 
 Comandos de prueba dentro del mensaje del usuario:
-    [[sistema]]  responde con el prompt de sistema recibido
-    [[error]]    simula un fallo de generacion
+    [[sistema]]   responde con el prompt de sistema recibido
+    [[error]]     simula un fallo de generacion
+    [[pensar]]    responde con un bloque <think>...</think> delante (debe filtrarse)
+    [[historial]] responde con los mensajes recibidos, uno por linea (rol: texto)
+    [[codigo]]    responde con un bloque de codigo (el asistente publico debe cortarlo)
 """
 
 from __future__ import annotations
@@ -23,7 +26,9 @@ RELLENO = ("Esta es una respuesta de prueba del motor falso de GlubIA, util para
 
 class BackendFalso:
     dispositivo = "FALSO"
+    tipo = "falso"
     overhead = 4
+    tokens_generacion = 3
 
     def __init__(self, cfg):
         self.retardo = cfg.falso_retardo
@@ -39,6 +44,12 @@ class BackendFalso:
             raise RuntimeError("fallo simulado")
         if "[[sistema]]" in ultimo:
             base = sistema
+        elif "[[pensar]]" in ultimo:
+            base = "<think> razonamiento interno que no debe verse </think>\n\nRespuesta visible."
+        elif "[[codigo]]" in ultimo:
+            base = "Claro, aqui tienes: ```python def ordenar(xs): return sorted(xs) ``` y " + RELLENO * 20
+        elif "[[historial]]" in ultimo:
+            base = " | ".join(f"{m['role']}: {m['content']}" for m in mensajes if m["role"] != "system")
         else:
             base = f"Respuesta simulada a: {ultimo[:200]}. " + RELLENO * 40
 

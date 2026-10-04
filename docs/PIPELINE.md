@@ -24,7 +24,12 @@ El modelo nunca viaja dentro de la imagen: se actualizan por separado y con ritm
 
 ## 1. Primera vez: el repositorio
 
-1. Crea en GitHub un repositorio **privado** llamado `glubia`.
+> **Hecho.** El repositorio es `JuanPabloAvendano/GlubIA` (público) y la imagen
+> `ghcr.io/juanpabloavendano/glubia`. Esta sección queda como referencia por si lo rehaces.
+> Al ser público, **todo lo que hay en él, historial incluido, es público**: secretos, datos de
+> clientes y perfil privado nunca van al repositorio.
+
+1. Crea en GitHub un repositorio llamado `glubia`.
 2. Lo más fácil: `powershell -ExecutionPolicy Bypass -File scripts\crear-repo.ps1 -Usuario TU-USUARIO`
    hace todo lo de abajo y además comprueba que no se suba el modelo ni ningún secreto.
    A mano, en tu carpeta (Windows, PowerShell). El primer comando coloca la configuracion de GitHub
@@ -140,10 +145,22 @@ que veas una respuesta mala: así no vuelve.
 
 ## 6. Dependencias
 
-Dependabot abre cada lunes PR agrupados (OpenVINO por un lado, FastAPI/Uvicorn por otro, imagen base
-y acciones de GitHub). El CI los prueba con OpenVINO real antes de que decidas fusionarlos.
-`requirements.txt` está fijado a versiones exactas: un build de hoy y uno de dentro de seis meses
-dan la misma imagen.
+Dependabot abre cada lunes PR agrupados (OpenVINO, la parte web, herramientas de desarrollo y
+acciones de GitHub, más la imagen base). El CI los prueba con OpenVINO real antes de que decidas
+fusionarlos. `requirements.txt` fija a versiones exactas **solo las dependencias directas**: fijar
+también las indirectas (como `pydantic-core`) hacía fallar los PR de Dependabot, que actualizan una
+y no la otra.
+
+Cómo decidir con un PR de Dependabot:
+
+- **CI en verde y es un parche o menor** (`x.y.Z`, `x.Y.0`): fusiona.
+- **OpenVINO** (`2026.3 → 2026.4`…): fusiona si pasa el CI, y antes de desplegar mide en tu equipo
+  (`scripts/medir.py`) por si cambia el rendimiento en GPU/NPU, que el CI no tiene.
+- **Imagen base de Ubuntu a una versión no LTS** (p. ej. 25.10): ciérralo; la base se queda en LTS.
+- **CI en rojo**: no lo fusiones; si es por un conflicto de versiones, normalmente lo resuelve el
+  siguiente PR agrupado.
+- Los PR que queden obsoletos por un cambio en `requirements.txt` los cierra Dependabot solo, o
+  ciérralos tú.
 
 ## 7. Copias de seguridad
 

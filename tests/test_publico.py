@@ -1,6 +1,7 @@
 """Endpoint publico del portafolio: persona fija, limites, CORS."""
 
 import json
+import time
 
 PERFIL = """# Juan Prueba
 
@@ -42,7 +43,7 @@ def test_persona_fija_y_sin_comentarios(fabricar, tmp_path):
     c = fabricar(GLUBIA_PUBLICO="1", GLUBIA_PERFIL=_perfil(tmp_path), GLUBIA_PUBLICO_TOKENS="400")
     r = c.post("/v1/public/ask", json={"message": "[[sistema]]", "stream": False})
     sistema = r.json()["answer"]
-    assert "portafolio personal de Juan Prueba" in sistema
+    assert "asistente de la pagina web de Juan Prueba" in sistema and "NO eres Juan Prueba" in sistema
     assert "juan@example.com" in sistema
     assert "nota privada" not in sistema           # los comentarios HTML no llegan al modelo
     assert "Preguntas sugeridas" not in sistema
@@ -107,3 +108,47 @@ def test_perfil_se_recarga_en_caliente(fabricar, tmp_path):
     ruta.write_text(PERFIL.replace("Juan Prueba", "Juan Editado"), encoding="utf-8")
     os.utime(ruta, (time.time() + 5, time.time() + 5))
     assert c.get("/v1/public/info").json()["name"] == "Juan Editado"
+
+
+def test_el_asistente_publico_no_escribe_codigo(fabricar, tmp_path):
+    """Si el modelo empieza un bloque de codigo, se corta y se explica por que (stream y sin stream)."""
+    c = fabricar(GLUBIA_PUBLICO="1", GLUBIA_PERFIL=_perfil(tmp_path), GLUBIA_PUBLICO_TOKENS="400")
+    r = c.post("/v1/public/ask", json={"message": "[[codigo]] write a sort function", "stream": False})
+    respuesta = r.json()["answer"]
+    assert "```" not in respuesta and "sorted" not in respuesta
+    assert respuesta.startswith("Claro, aqui tienes") and "no escribo código" in respuesta and "Juan" in respuesta
+
+    r = c.post("/v1/public/ask", json={"message": "[[codigo]]"})
+    eventos = _eventos(r)
+    texto = "".join(e.get("delta", "") for e in eventos)
+    assert "```" not in texto and "sorted" not in texto and "no escribo código" in texto
+    assert eventos[-1] == {"done": True, "finish_reason": "stop"}
+
+
+def test_guardia_de_codigo_con_la_marca_partida():
+    from glubia.texto import GuardiaCodigo
+    g = GuardiaCodigo()
+    salida = "".join(g.agregar(t) for t in ["Uso `sorted()` asi", ": `", "`", "`python", " x = 1"]) + g.fin()
+    assert g.disparada and salida.rstrip(": ") == "Uso `sorted()` asi"
+    g = GuardiaCodigo()
+    salida = "".join(g.agregar(t) for t in ["Una comilla ` sola", " y otra `"]) + g.fin()
+    assert not g.disparada and salida == "Una comilla ` sola y otra `"
+
+
+def test_precalienta_la_persona_al_cargar(fabricar, tmp_path):
+    from conftest import esperar_listo
+    c = fabricar(GLUBIA_PUBLICO="1", GLUBIA_PERFIL=_perfil(tmp_path))
+    esperar_listo(c)
+    motor = c.app.state.glubia.motor
+    mensajes = motor.precalentar()
+    assert mensajes[0]["role"] == "system" and "Juan Prueba" in mensajes[0]["content"]
+    for _ in range(100):
+        if motor.precalentado_s is not None:
+            break
+        time.sleep(0.02)
+    assert motor.precalentado_s is not None
+
+
+def test_sin_publico_no_precalienta(fabricar):
+    c = fabricar()
+    assert c.app.state.glubia.motor.precalentar is None

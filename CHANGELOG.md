@@ -5,6 +5,27 @@ La seccion de cada version es el texto de su Release en GitHub (lo extrae `relea
 
 ## [Sin publicar]
 
+## [2.1.0] - 2026-10-03
+
+### Anadido
+- **Buzon privado** (`/buzon`): envia a tu equipo archivos de cualquier tipo (documentos, comprimidos, exportaciones de chats...) y notas de texto. Subida por partes de 8 MiB con reanudacion, comprobacion sha256 por parte y del archivo completo, cuota y reserva de disco. Nada se ejecuta ni se descomprime. Ver `docs/BUZON.md`.
+- **Verificacion en dos pasos (TOTP)**: `python -m glubia.identidad activar` muestra un QR para tu app de autenticacion. Con ella activa, el login pide contrasena y codigo, y el buzon solo se abre con sesion verificada.
+- **Generador del portafolio** (`portafolio/construir.py`): la pagina, el CV imprimible, la 404, `_headers`, `robots.txt`, `sitemap.xml` y lo que sabe la IA (`perfil.md`) salen de un solo archivo de datos, `portafolio/contenido/sitio.toml`. Anadir proyectos, videos de YouTube, audios o documentos es anadir datos. La politica de seguridad de contenido se calcula segun lo que la pagina usa.
+- **Modelos multimodales y de otras familias**: `GLUBIA_PIPELINE=auto` detecta si el modelo es de formato VLM (Gemma 4, Qwen3.5) o LLM. `GLUBIA_OV_CONFIG` pasa opciones a OpenVINO (p. ej. `MAX_PROMPT_LEN` para el NPU) y el razonamiento `<think>` se desactiva y, si aparece, se filtra.
+- `scripts/medir.py`: tiempo de carga, memoria, primer token y tokens/s de un modelo, en JSON.
+- Prueba de concepto de las comunicaciones (`docs/POC.md`) y pruebas de comportamiento con agentes (`docs/PRUEBAS-AGENTES.md`).
+
+### Corregido
+- El asistente del portafolio hablaba en primera persona como si fuera Juan, inventaba reputacion y convertia los datos que faltaban en negativas ("no ha trabajado en ninguna empresa"). Nueva persona en tercera persona con reglas explicitas.
+- Por el Caddy publico pasaban PUT, DELETE, TRACE... hacia GlubIA; ahora solo POST en `/api/preguntar` y GET en `/api/info`.
+- Con `flush_interval -1` en Caddy 2.6, una peticion sin streaming abandonada seguia ocupando el modelo; y en el servidor tampoco se notaba hasta ~19 s despues. Las dos cosas.
+- Un cuerpo que no era JSON valido, o un texto con sustitutos UTF-16 sueltos, daba error 500.
+- La pagina: la pregunta se perdia si fallaba el envio, una respuesta cortada a medias se borraba, cualquier error se mostraba como "dormida", el foco era invisible en modo de alto contraste y las sugerencias parecian pulsables mientras la IA cargaba. La 404 ya funciona en rutas anidadas.
+
+### Cambiado
+- `requirements.txt` fija solo dependencias directas (lo que rompia los PR de Dependabot).
+- El repositorio es `JuanPabloAvendano/GlubIA` y la imagen `ghcr.io/juanpabloavendano/glubia`.
+
 ## [2.0.0] - 2026-10-02
 
 ### Corregido

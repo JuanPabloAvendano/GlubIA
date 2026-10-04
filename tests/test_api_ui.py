@@ -138,3 +138,29 @@ def test_secreto_migrado_desde_v1(fabricar, tmp_path):
     datos = tmp_path / "nuevo"
     assert cargar_secreto(datos, base) == b"s" * 48
     assert (datos / ".glubia_secret").exists()
+
+
+def test_sustitutos_sueltos_no_rompen_la_respuesta(cliente):
+    """JSON admite "\\ud83d" sin pareja (un emoji cortado por slice() en JavaScript), pero no
+    es UTF-8 valido: antes daba 500. Ahora se acepta con el caracter roto reemplazado por U+FFFD."""
+    iniciar_sesion(cliente)
+    r = cliente.post("/api/chat", content=b'{"prompt": "hola \\ud83d mundo"}',
+                     headers={"Content-Type": "application/json"})
+    assert r.status_code == 200, r.text
+    assert "\ufffd" in r.json()["response"]      # el motor falso repite la pregunta
+
+
+def test_sin_sustitutos():
+    from glubia.texto import sin_sustitutos
+    assert sin_sustitutos("hola") == "hola"
+    assert sin_sustitutos("a\ud83db") == "a\ufffdb"
+    assert sin_sustitutos("ok \U0001F600") == "ok \U0001F600"
+
+
+def test_cuerpo_invalido_no_da_500(cliente):
+    """Bytes que no son JSON, o JSON con bytes no UTF-8: error del cliente, nunca 500."""
+    iniciar_sesion(cliente)
+    for cuerpo in (b"\xff\xfe no es json", b'{"prompt": "\xff\xfe"}'):
+        r = cliente.post("/api/chat", content=cuerpo, headers={"Content-Type": "application/json"})
+        assert r.status_code in (400, 422), (cuerpo, r.status_code, r.text)
+        assert "detail" in r.json()

@@ -7,17 +7,22 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 
 from . import __version__
+from .api_buzon import router as router_buzon
+from .api_buzon import ruta_es_parte
 from .api_ui import router as router_ui
 from .api_v1 import ErrorAPI, respuesta_error
 from .api_v1 import router as router_v1
+from .buzon import Buzon
 from .config import Config, cargar_config
 from .conversaciones import Conversaciones
+from .identidad import Identidad
 from .motor import Motor, NoListo, Ocupado
 from .perfil import Perfil
 from .seguridad import COOKIE, Claves, Limitador, Sesiones, cargar_secreto, ip_cliente
@@ -46,6 +51,16 @@ class Estado:
                 self.conversaciones = Conversaciones(cfg.data_dir / "glubia.db")
             except Exception as exc:  # noqa: BLE001
                 log.warning("conversaciones en servidor desactivadas: %s", exc)
+        self.identidad = Identidad(cfg.data_dir / "identidad.json")
+        self.buzon: Optional[Buzon] = None
+        if cfg.buzon and cfg.auth:
+            try:
+                self.buzon = Buzon(cfg.buzon_dir, parte_bytes=cfg.buzon_parte_mb * 1024 * 1024,
+                                   max_bytes=cfg.buzon_max_mb * 1024 * 1024,
+                                   cuota_bytes=int(cfg.buzon_cuota_gb * 1024 ** 3),
+                                   reserva_bytes=int(cfg.buzon_reserva_gb * 1024 ** 3))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("buzon desactivado: %s", exc)
         self.perfil = Perfil(cfg.perfil_path, cfg.publico_nombre)
         self.limites = Limitador()
         self.fallos = Limitador()
@@ -56,6 +71,12 @@ class Estado:
             else:
                 from .backend_openvino import crear as fabrica
         self.motor = Motor(cfg, fabrica)
+        if cfg.publico and cfg.precalentar:
+            self.motor.precalentar = self._mensajes_precalentar
+
+    def _mensajes_precalentar(self):
+        datos = self.perfil.obtener()
+        return [{"role": "system", "content": datos[0]}, {"role": "user", "content": "Hola"}] if datos else None
 
     def ip(self, request: Request) -> str:
         return ip_cliente(request, self.cfg.proxies)
@@ -95,18 +116,27 @@ async def _responder_json(send, status: int, mensaje: str) -> None:
 class LimiteCuerpo:
     """Corta cuerpos enormes ANTES de que FastAPI los lea en memoria.
 
-    El endpoint publico admite 32 KB; el resto, 16 MB (conversaciones largas).
+    El endpoint publico admite 32 KB; las partes del buzon, su tamano de parte;
+    el resto, 16 MB (conversaciones largas).
     """
 
-    def __init__(self, app, publico: int = 32 * 1024, general: int = 16 * 1024 * 1024):
+    def __init__(self, app, publico: int = 32 * 1024, general: int = 16 * 1024 * 1024,
+                 parte: int = 8 * 1024 * 1024):
         self.app = app
         self.publico = publico
         self.general = general
+        self.parte = parte + 64 * 1024
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http" or scope["method"] in ("GET", "HEAD", "OPTIONS", "DELETE"):
             return await self.app(scope, receive, send)
-        limite = self.publico if scope["path"].startswith("/v1/public") else self.general
+        ruta = scope["path"]
+        if ruta.startswith("/v1/public"):
+            limite = self.publico
+        elif ruta_es_parte(ruta):
+            limite = self.parte
+        else:
+            limite = self.general
         cabeceras = dict(scope.get("headers") or [])
         declarado = cabeceras.get(b"content-length")
         if declarado is not None:
@@ -208,7 +238,8 @@ def crear_app(cfg: Optional[Config] = None, fabrica=None, salir_si_falla: bool =
             primero = exc.errors()[0] if exc.errors() else {}
             campo = ".".join(str(x) for x in primero.get("loc", []) if x != "body")
             return respuesta_error(request, 400, f"Parámetro no válido: {campo} ({primero.get('msg', '')})")
-        return JSONResponse({"detail": exc.errors()}, status_code=422)
+        errores = [{k: v for k, v in e.items() if k in ("loc", "msg", "type")} for e in exc.errors()]
+        return JSONResponse({"detail": jsonable_encoder(errores)}, status_code=422)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz() -> dict:
@@ -225,8 +256,9 @@ def crear_app(cfg: Optional[Config] = None, fabrica=None, salir_si_falla: bool =
 
     app.include_router(router_ui)
     app.include_router(router_v1)
+    app.include_router(router_buzon)
 
     # El ultimo en anadirse es el mas externo.
     app.add_middleware(CorsPublico, origenes=cfg.cors)
-    app.add_middleware(LimiteCuerpo)
+    app.add_middleware(LimiteCuerpo, parte=cfg.buzon_parte_mb * 1024 * 1024)
     return app

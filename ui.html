@@ -43,6 +43,8 @@
     font-weight:600;border-radius:9px;padding:11px}
   .card button:disabled{opacity:.5;cursor:default}
   #loginErr{color:var(--err);font-size:12.5px;min-height:18px;margin-top:10px}
+  #otp{margin-top:10px;letter-spacing:.3em;text-align:center}
+  [hidden]{display:none !important}
 
   /* ---------- Sidebar ---------- */
   aside{width:var(--sidebar);flex:0 0 var(--sidebar);background:var(--bg2);
@@ -209,6 +211,8 @@
     <div class="logo">Glub<b>IA</b></div>
     <p>Acceso restringido</p>
     <input id="pw" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+    <input id="otp" type="text" inputmode="numeric" maxlength="7" placeholder="Código de verificación"
+           autocomplete="one-time-code" aria-label="Código de verificación" hidden>
     <button type="submit" id="loginBtn">Entrar</button>
     <div id="loginErr"></div>
   </form>
@@ -239,6 +243,7 @@
     <div id="hTitle">Nueva conversación</div>
     <button class="hb" id="cfgBtn">⚙ Ajustes</button>
     <button class="hb hide-sm" id="expBtn">↓ Exportar</button>
+    <a class="hb hide-sm" id="buzonBtn" href="buzon" style="display:none;text-decoration:none">Buzón</a>
     <button class="hb hide-sm" id="outBtn" style="display:none">Salir</button>
   </header>
 
@@ -816,10 +821,11 @@ $("#loginForm").onsubmit = async e => {
   try{
     const r = await fetch("api/login", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({password: $("#pw").value})
+      body:JSON.stringify({password: $("#pw").value,
+                           codigo: $("#otp").hidden ? undefined : $("#otp").value.replace(/\s/g, "")})
     });
     const j = await r.json().catch(() => ({}));
-    if(r.ok){ $("#login").classList.remove("on"); $("#pw").value = ""; arrancarApp(); }
+    if(r.ok){ $("#login").classList.remove("on"); $("#pw").value = ""; $("#otp").value = ""; arrancarApp(); }
     else $("#loginErr").textContent = j.detail || "Acceso denegado";
   }catch(e){ $("#loginErr").textContent = "No hay conexión con el servidor"; }
   btn.disabled = false;
@@ -888,6 +894,8 @@ document.addEventListener("visibilitychange", () => { if(!document.hidden) sincr
     sysDefecto = j.system_prompt || "";
     servidorConv = j.conversations === true;
     if(j.auth_required) $("#outBtn").style.display = "";
+    if(j.mailbox) $("#buzonBtn").style.display = "";
+    if(j.totp_required){ $("#otp").hidden = false; $("#otp").required = true; }
     if(j.auth_required && !j.authenticated){ mostrarLogin(); ping(); return; }
   }catch(e){ /* sin backend: la UI arranca igual y el panel marcara "sin enlace" */ }
   arrancarApp();

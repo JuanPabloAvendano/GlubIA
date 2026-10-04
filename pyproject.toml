@@ -2,7 +2,7 @@
 name = "glubia"
 dynamic = ["version"]
 description = "IA local sobre OpenVINO con interfaz web propia y API compatible con OpenAI"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "Juan Pablo Avendaño Duque" }]
 
 [tool.setuptools.dynamic]
@@ -10,7 +10,7 @@ version = { attr = "glubia.__version__" }
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 extend-exclude = ["docs/historia", "respaldo_v1", "openvino_env", "modelo_qwen_7b_ov"]
 
 [tool.ruff.lint]
@@ -24,3 +24,5 @@ filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.ruff.lint.per-file-ignores]
 "glubia/perfil.py" = ["E501"]   # el prompt de la persona es prosa: mejor sin cortar
+"portafolio/construir.py" = ["E501"]   # plantillas HTML: mejor legibles que cortadas
+"scripts/medir.py" = ["E501"]

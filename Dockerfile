@@ -57,13 +57,13 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN (userdel -r ubuntu 2>/dev/null || true) && (groupdel ubuntu 2>/dev/null || true) \
  && groupadd -g "${GID}" glubia \
  && useradd -m -u "${UID}" -g "${GID}" -s /usr/sbin/nologin glubia \
- && mkdir -p /data /modelos /perfil /home/glubia/intel \
+ && mkdir -p /data /modelos /perfil /buzon /home/glubia/intel \
  && printf 0 > /home/glubia/intel/openvino_telemetry \
- && chown -R glubia:glubia /data /home/glubia
+ && chown -R glubia:glubia /data /buzon /home/glubia
 
 WORKDIR /app
 COPY glubia/ /app/glubia/
-COPY ui.html glubia_server.py /app/
+COPY ui.html buzon.html glubia_server.py /app/
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -71,6 +71,7 @@ ENV PYTHONUNBUFFERED=1 \
     GLUBIA_DATA=/data \
     GLUBIA_MODEL=/modelos/qwen2.5-coder-7b-int4-ov \
     GLUBIA_PERFIL=/perfil/perfil.md \
+    GLUBIA_BUZON_DIR=/buzon \
     GLUBIA_HOST=0.0.0.0 \
     GLUBIA_PORT=11434 \
     GLUBIA_DEVICE=GPU

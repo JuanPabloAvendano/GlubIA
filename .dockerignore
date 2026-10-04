@@ -3,6 +3,7 @@
 *
 !glubia/
 !ui.html
+!buzon.html
 !glubia_server.py
 !requirements.txt
 **/__pycache__

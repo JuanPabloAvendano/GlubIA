@@ -1,7 +1,7 @@
 # Requisitos de GlubIA
 
-Product Owner: Juan Pablo Avendaño Duque. Fecha: 2 oct 2026.
-Estado de cada requisito frente a la versión 2.0: **Cumple**, **Parcial**, **Pendiente**.
+Product Owner: Juan Pablo Avendaño Duque. Fecha: 2 oct 2026 (actualizado el 3 oct con la 2.1).
+Estado de cada requisito frente a la versión 2.1: **Cumple**, **Parcial**, **Pendiente**.
 Los marcados *Por validar* esperan la aprobación del PO antes de implementarse.
 
 ## Objetivo inmediato (2 semanas)
@@ -54,7 +54,11 @@ Criterios de aceptación:
 Restricción: no se usa `intel-npu-acceleration-library`; Intel la archivó y recomienda OpenVINO.
 PyTorch se usa solo para preparar o exportar modelos.
 
-Estado: **Pendiente.** Hoy la generación usa GPU con caída a CPU; el NPU no se usa.
+Estado: **Pendiente.** Hoy la generación usa GPU con caída a CPU; el NPU no se usa. Preparado en la
+2.1: `GLUBIA_OV_CONFIG` para pasar `MAX_PROMPT_LEN` y demás opciones del NPU, y `scripts/medir.py`
+para la comparación del criterio 3. Como RF-05 (y con él los embeddings) quedó fuera de alcance,
+**propuesta para validar:** que la primera etapa en el NPU sea la generación del modelo pequeño del
+portafolio, que además encaja con el modo limitado de RF-01 (ver `MODELOS.md`).
 
 ### RF-03 Control total de la información *(Por validar)*
 
@@ -66,8 +70,10 @@ Estado: **Pendiente.** Hoy la generación usa GPU con caída a CPU; el NPU no se
    los visitantes no se guardan.
 4. Juan añade o quita información editando archivos; el cambio se aplica sin reiniciar.
 
-Estado: **Cumple** para el perfil (`perfil.md`, recarga en caliente, comentarios no visibles para el
-modelo, preguntas no guardadas, IP anonimizada en logs). **Pendiente** la documentación de proyectos
+Estado: **Cumple** para el perfil (recarga en caliente, comentarios no visibles para el modelo,
+preguntas no guardadas, IP anonimizada en logs). Desde la 2.1 el perfil se genera desde
+`portafolio/contenido/` (lo mismo que alimenta la página y el CV) y los textos en primera persona se
+le pasan al modelo como citas tuyas. Lo que llega por el buzón (RF-07) **no** lo lee la IA. **Pendiente** la documentación de proyectos
 (depende de RF-05).
 
 ### RF-04 Portafolio con chat sobre Juan
@@ -76,8 +82,10 @@ modelo, preguntas no guardadas, IP anonimizada en logs). **Pendiente** la docume
 2. El chat responde solo sobre Juan y sus proyectos, con límites por visitante.
 3. La página funciona aunque la IA esté apagada.
 
-Estado: **Parcial.** Hecho: página, chat, estados, límites y persona fija. Falta: contenido real,
-dominio, despliegue en Cloudflare Pages + túnel, y el CV generado desde la misma fuente que el perfil.
+Estado: **Parcial.** Hecho: página, CV imprimible, 404 y perfil de la IA generados desde un solo
+archivo (`portafolio/contenido/sitio.toml`), chat con estados, límites, persona en tercera persona
+probada con agentes (`PRUEBAS-AGENTES.md`). Falta: dominio, despliegue en Cloudflare Pages + túnel
+(`CLOUDFLARE.md`) y completar contacto (correo, LinkedIn) y, si quieres, más proyectos.
 
 ### RF-05 Consulta de documentación extensa (RAG) — fuera de alcance por ahora
 
@@ -92,8 +100,23 @@ Estado: **Pendiente, fuera del alcance de las 2 semanas.**
 2. Lo que se desarrolla no afecta al servicio publicado hasta que se despliega una versión.
 3. El modelo no va en el repositorio: se descarga verificado o se copia.
 
-Estado: **Parcial.** Hecho: repositorio organizado, CI y scripts de despliegue con vuelta atrás.
-Falta: crear el repositorio y la primera ejecución del CI.
+Estado: **Parcial.** Hecho: repositorio `JuanPabloAvendano/GlubIA` público, CI en verde (pruebas,
+OpenVINO real, construcción y validación de la imagen), publicación en GHCR, Dependabot y scripts de
+despliegue con vuelta atrás. Falta: el primer despliegue en Omarchy.
+
+### RF-07 Buzón privado con verificación de identidad *(Por validar)*
+
+Juan puede enviarse a su equipo cualquier tipo de información (chats, documentos, comprimidos,
+notas) desde cualquier lugar, demostrando que es él.
+
+1. Para enviar hace falta contraseña **y** un código de un solo uso de su teléfono (TOTP).
+2. Se admite cualquier tipo y tamaño de archivo (hasta la cuota), con reanudación si se corta.
+3. Lo recibido no se ejecuta, no se descomprime y no lo lee la IA.
+4. Se comprueba la integridad (sha256) y se puede descargar o borrar desde la misma página.
+5. Funciona a través de Cloudflare (límite de 100 MB por petición, RT-07).
+
+Estado: **Cumple** a falta de validar (`BUZON.md`, probado de punta a punta en `POC.md`). Falta
+activarlo en Omarchy con `python -m glubia.identidad activar`.
 
 ## Restricciones técnicas
 
@@ -111,6 +134,8 @@ Falta: crear el repositorio y la primera ejecución del CI.
 - **RT-05 Salud del equipo:** no se exige disponibilidad 24/7; la disponibilidad objetivo es
   "mientras Omarchy esté encendido".
 - **RT-06 Plataforma:** OpenVINO 2026 (exige AVX2), Docker en Omarchy, Cloudflare (DNS, túnel, Pages).
+- **RT-07 Tamaño de petición:** Cloudflare corta en 100 MB cada petición en los planes Free y Pro.
+  Toda subida grande va por partes (el buzón usa 8 MiB).
 
 ## Resumen de estado
 
@@ -122,3 +147,4 @@ Falta: crear el repositorio y la primera ejecución del CI.
 | RF-04 Portafolio con chat | Parcial |
 | RF-05 RAG | Fuera de alcance |
 | RF-06 Trabajo desde Windows y Omarchy | Parcial |
+| RF-07 Buzón con verificación | Cumple · por validar |

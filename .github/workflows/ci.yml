@@ -30,6 +30,7 @@ jobs:
       - run: pip install -r requirements-dev.txt shellcheck-py
       - run: ruff check .
       - run: shellcheck -S warning scripts/*.sh iniciar.sh
+      - run: python portafolio/construir.py --comprobar
       - run: pytest -q -m "not openvino"
 
   openvino:

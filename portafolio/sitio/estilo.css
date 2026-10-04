@@ -94,7 +94,9 @@ a {
 }
 a:hover { text-decoration-thickness: .16em; }
 
-:focus-visible { outline: none; box-shadow: var(--anillo); border-radius: 4px; }
+/* El contorno transparente no se ve normalmente, pero en modo de alto contraste
+   (forced-colors) el sistema lo pinta: sin el, el foco era invisible ahi. */
+:focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: var(--anillo); border-radius: 4px; }
 
 /* -------------------------------------------------- conversacion */
 
@@ -207,7 +209,9 @@ a:hover { text-decoration-thickness: .16em; }
   border-radius: 999px;
   cursor: pointer;
 }
-.sugerencias button:hover { border-color: var(--tinta); }
+.sugerencias button:hover:not(:disabled) { border-color: var(--tinta); }
+.sugerencias button:disabled { opacity: .45; cursor: default; }
+.a .nota-corte { margin-top: .5rem; font-size: .9rem; color: var(--pizarra); font-style: italic; }
 
 .pregunta textarea {
   display: block;
@@ -249,7 +253,8 @@ a:hover { text-decoration-thickness: .16em; }
 
 /* -------------------------------------------------- trabajo y contacto */
 
-.trabajo { max-width: 46rem; margin-top: clamp(3.5rem, 8vw, 6rem); }
+.seccion { max-width: 46rem; margin-top: clamp(3rem, 7vw, 5rem); }
+.trabajo { margin-top: clamp(3.5rem, 8vw, 6rem); }
 
 .proyecto {
   display: grid;
@@ -267,6 +272,100 @@ a:hover { text-decoration-thickness: .16em; }
 }
 .proyecto p { margin: 0; max-width: 58ch; }
 .proyecto a { white-space: nowrap; }
+.estado-proyecto {
+  display: block;
+  margin-top: .25rem;
+  font-stretch: 100%;
+  font-weight: 500;
+  font-size: .85rem;
+  color: var(--pizarra);
+}
+.etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: .7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.etiquetas li {
+  padding: .1rem .55rem;
+  font-size: .82rem;
+  color: var(--pizarra);
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+}
+.enlaces-proyecto { margin-top: .6rem !important; font-weight: 600; }
+.enlaces-proyecto a + a { margin-left: 1rem; }
+
+.sobre p { max-width: 60ch; margin: 0 0 .8rem; }
+
+.habilidades { display: grid; gap: .5rem; margin: 0; }
+.habilidades div { display: grid; grid-template-columns: minmax(8.5rem, 12rem) 1fr; gap: 2rem; }
+.habilidades dt { font-weight: 700; }
+.habilidades dd { margin: 0; }
+
+.medios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.medio h3 { margin: .6rem 0 .2rem; font-size: 1.05rem; }
+.medio p { margin: 0; color: var(--pizarra); font-size: .95rem; }
+.medio audio { width: 100%; margin-top: .5rem; }
+.meta-medio { font-weight: 500; font-size: .85rem; color: var(--pizarra); }
+.video { position: relative; display: block; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 16 / 9; }
+.video img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: .85; }
+.video .play {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 2.2rem; color: #fff; text-shadow: 0 2px 12px rgba(0, 0, 0, .6);
+}
+.video iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+.no-encontrada { max-width: 46rem; margin: 20vh auto; }
+
+/* -------------------------------------------------- CV imprimible */
+
+body.cv { background: var(--cal); }
+.hoja {
+  max-width: 50rem;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--papel);
+  border: 1.5px solid var(--linea);
+  border-radius: 12px;
+  font-size: 1rem;
+}
+.hoja h1 { font-stretch: 118%; font-weight: 820; font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1; margin: 0 0 .5rem; }
+.hoja h2 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: .06em; margin: 1.8rem 0 .6rem;
+  padding-bottom: .3rem; border-bottom: 1.5px solid var(--linea); }
+.hoja h3 { font-size: 1rem; margin: 0; }
+.hoja h3 span { font-weight: 500; color: var(--pizarra); font-size: .9rem; margin-left: .4rem; }
+.hoja ul { margin: 0; padding: 0; list-style: none; }
+.hoja li + li { margin-top: .9rem; }
+.hoja p { margin: .25rem 0 0; max-width: 70ch; }
+.cv-bajada { font-size: 1.1rem; margin: 0 0 .8rem !important; }
+.cv-contacto { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; color: var(--pizarra); font-size: .92rem; }
+.cv-contacto li + li { margin-top: 0 !important; }
+.cv-enlaces { font-size: .92rem; }
+.cv-ia { display: flex; gap: 1rem; align-items: center; margin-top: 1.4rem; padding: .9rem 1rem;
+  border: 1.5px solid var(--tinta); border-radius: 10px; }
+.cv-ia svg { flex: 0 0 auto; width: 84px; height: 84px; }
+.cv-ia p { margin: 0; }
+.no-imprimir { max-width: 50rem; margin: 1rem auto 2rem; padding: 0 1rem; color: var(--pizarra); font-size: .9rem; }
+
+@media print {
+  @page { size: A4; margin: 14mm; }
+  :root { --cal: #fff; --papel: #fff; --tinta: #111; --pizarra: #444; --linea: #bbb; }
+  body { padding: 0; font-size: 10.5pt; }
+  .hoja { border: 0; padding: 0; max-width: none; }
+  .no-imprimir, .saltar { display: none; }
+  a { color: inherit; text-decoration: none; }
+  .hoja li { break-inside: avoid; }
+}
 
 .contacto { max-width: 46rem; margin-top: clamp(3rem, 7vw, 5rem); }
 .contacto p { margin: 0 0 .75rem; }
@@ -312,6 +411,8 @@ a:hover { text-decoration-thickness: .16em; }
 }
 
 @media (max-width: 40rem) {
+  .habilidades div { grid-template-columns: 1fr; gap: 0; }
+  .cv-ia { flex-direction: column; align-items: flex-start; }
   .proyecto { grid-template-columns: 1fr; }
 }
 

@@ -35,16 +35,25 @@ services:
       GLUBIA_TITULO: ${GLUBIA_TITULO:-GlubIA}
       GLUBIA_API_KEYS: ${GLUBIA_API_KEYS:-}
       GLUBIA_DEVICE: ${GLUBIA_DEVICE:-GPU}
+      GLUBIA_PIPELINE: ${GLUBIA_PIPELINE:-auto}
+      GLUBIA_OV_CONFIG: ${GLUBIA_OV_CONFIG:-}
+      GLUBIA_PLANTILLA_EXTRA: ${GLUBIA_PLANTILLA_EXTRA:-}
       GLUBIA_CTX: ${GLUBIA_CTX:-8192}
       GLUBIA_MAX_TOKENS: ${GLUBIA_MAX_TOKENS:-4096}
       GLUBIA_MAX_SEG: ${GLUBIA_MAX_SEG:-300}
       GLUBIA_COLA: ${GLUBIA_COLA:-8}
       GLUBIA_PUBLICO: ${GLUBIA_PUBLICO:-1}
+      GLUBIA_PRECALENTAR: ${GLUBIA_PRECALENTAR:-1}
       GLUBIA_PUBLICO_TOKENS: ${GLUBIA_PUBLICO_TOKENS:-350}
       GLUBIA_PUBLICO_RPM: ${GLUBIA_PUBLICO_RPM:-6}
       GLUBIA_PUBLICO_DIA: ${GLUBIA_PUBLICO_DIA:-80}
       GLUBIA_PUBLICO_COLA: ${GLUBIA_PUBLICO_COLA:-3}
       GLUBIA_CORS: ${GLUBIA_CORS:-}
+      GLUBIA_BUZON: ${GLUBIA_BUZON:-1}
+      GLUBIA_BUZON_MAX_MB: ${GLUBIA_BUZON_MAX_MB:-10240}
+      GLUBIA_BUZON_CUOTA_GB: ${GLUBIA_BUZON_CUOTA_GB:-100}
+      GLUBIA_BUZON_RESERVA_GB: ${GLUBIA_BUZON_RESERVA_GB:-10}
+      GLUBIA_BUZON_PARTE_MB: ${GLUBIA_BUZON_PARTE_MB:-8}
       GLUBIA_LOG: ${GLUBIA_LOG:-INFO}
       GLUBIA_DATA: /data
       GLUBIA_MODEL: /modelos/${GLUBIA_MODELO_DIR:-qwen2.5-coder-7b-int4-ov}
@@ -56,6 +65,7 @@ services:
       - glubia-datos:/data                  # secreto, conversaciones, claves, cache de OpenVINO
       - ${GLUBIA_MODELOS:-./modelos}:/modelos:ro
       - ./portafolio/perfil:/perfil:ro      # perfil.md: se relee en caliente al editarlo
+      - ${GLUBIA_BUZON_HOST:-./buzon}:/buzon  # lo que te envias por el buzon, visible en esta carpeta
     devices:
       - /dev/dri:/dev/dri                   # GPU Intel (compose.cpu.yaml lo quita)
     group_add:

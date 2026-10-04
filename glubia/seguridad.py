@@ -64,21 +64,28 @@ class Sesiones:
         mac = hmac.new(self.secreto, payload.encode("utf-8"), hashlib.sha256).digest()
         return payload + "." + base64.urlsafe_b64encode(mac).decode("ascii").rstrip("=")
 
-    def crear_token(self) -> str:
+    def crear_token(self, nivel: int = 1) -> str:
+        """nivel 1 = contrasena; nivel 2 = contrasena + codigo de verificacion."""
         expira = int(time.time()) + self.horas * 3600
-        return self._firmar(f"{expira}:{secrets.token_urlsafe(8)}")
+        return self._firmar(f"{expira}:{secrets.token_urlsafe(8)}:{nivel}")
 
-    def token_valido(self, token: Optional[str]) -> bool:
+    def nivel_token(self, token: Optional[str]) -> int:
+        """0 si no vale. Los tokens de la v2.0 (sin nivel) cuentan como nivel 1."""
         if not token:
-            return False
+            return 0
         try:
             payload, _ = token.rsplit(".", 1)
-            expira = int(payload.split(":", 1)[0])
-        except ValueError:
-            return False
+            partes = payload.split(":")
+            expira = int(partes[0])
+            nivel = int(partes[2]) if len(partes) > 2 else 1
+        except (ValueError, IndexError):
+            return 0
         if not hmac.compare_digest(self._firmar(payload), token):
-            return False
-        return expira > time.time()
+            return 0
+        return nivel if expira > time.time() else 0
+
+    def token_valido(self, token: Optional[str]) -> bool:
+        return self.nivel_token(token) > 0
 
     def password_correcta(self, intento: str) -> bool:
         return hmac.compare_digest(intento.encode("utf-8"), self.password.encode("utf-8"))

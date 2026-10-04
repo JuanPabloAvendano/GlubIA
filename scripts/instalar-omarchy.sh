@@ -70,6 +70,10 @@ echo "5/6 Perfil del portafolio"
 if [ -f portafolio/perfil/perfil.md ]; then ok "portafolio/perfil/perfil.md"; else aviso "falta portafolio/perfil/perfil.md"; fi
 grep -q "COMPLETAR" portafolio/perfil/perfil.md 2>/dev/null && aviso "perfil.md aun tiene partes por COMPLETAR"
 
+# La carpeta del buzon debe existir antes de arrancar: si la crea Docker, queda de root
+# y el contenedor (usuario 1000) no puede escribir en ella.
+mkdir -p "${GLUBIA_BUZON_HOST:-./buzon}"
+
 echo "6/6 Arranque"
 if [ "${GLUBIA_IMAGEN:-}" = "ghcr.io/cambia-esto/glubia" ] || ! docker compose pull glubia 2>/dev/null; then
   aviso "sin imagen publicada: se construye aqui (tarda unos minutos la primera vez)"
@@ -82,3 +86,6 @@ echo "Listo. Sigue la carga con:  docker compose logs -f glubia"
 echo "  GlubIA privado ...... http://127.0.0.1:${PUERTO_PRIVADO:-8081}"
 echo "  Portafolio .......... http://127.0.0.1:${PUERTO_PORTAFOLIO:-8080}"
 echo "  Comprobar todo ...... scripts/humo.sh"
+echo
+echo "Para el buzon (enviarte archivos), activa la verificacion en dos pasos:"
+echo "  docker compose exec glubia python -m glubia.identidad activar"

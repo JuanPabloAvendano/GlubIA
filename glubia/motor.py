@@ -29,6 +29,8 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
+from .texto import FiltroPensamiento, quitar_pensamiento
+
 log = logging.getLogger("glubia.motor")
 
 PRIORIDAD_PRIVADA = 0   # tu UI y tus claves de API pasan primero
@@ -124,6 +126,9 @@ class Motor:
         self._activos: Dict[str, Trabajo] = {}
         self._hilo = threading.Thread(target=self._bucle, name="glubia-motor", daemon=True)
         self.salir_si_falla = True
+        # Devuelve los mensajes con los que "calentar" el modelo al cargar (o None). Ver _precalentar.
+        self.precalentar: Optional[Callable[[], Optional[List[Mensaje]]]] = None
+        self.precalentado_s: Optional[float] = None
 
     # ------------------------------------------------------------ ciclo de vida
 
@@ -211,6 +216,7 @@ class Motor:
                 os._exit(3)
             return
 
+        self._precalentar()
         while True:
             _, _, trabajo = self._cola.get()
             if trabajo is None:
@@ -238,6 +244,27 @@ class Motor:
                 with self._lock:
                     self._activos.pop(trabajo.id, None)
 
+    def _precalentar(self) -> None:
+        """Procesa una vez el prompt de la persona publica nada mas cargar.
+
+        OpenVINO conserva la cache KV entre llamadas y reutiliza el prefijo comun: con el
+        perfil (~1.350 tokens) la primera pregunta tras cargar tardaba ~50 s en llegar al
+        primer token en CPU y las siguientes ~1 s. Asi ese coste no lo paga el primer visitante.
+        Si mientras tanto llega una pregunta, espera lo mismo que habria esperado igualmente.
+        """
+        if self.precalentar is None:
+            return
+        try:
+            mensajes = self.precalentar()
+            if not mensajes:
+                return
+            t0 = time.monotonic()
+            self.backend.generar(mensajes, Parametros(max_new_tokens=1, temperature=0.0), lambda _t: False)
+            self.precalentado_s = round(time.monotonic() - t0, 2)
+            log.info("persona publica precalentada en %.1f s", self.precalentado_s)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("no se pudo precalentar: %s", exc)
+
     @staticmethod
     def _fin(trabajo: Trabajo, motivo: str, **extra) -> Dict[str, object]:
         datos = {"finish_reason": motivo, "texto": "", "tokens_entrada": 0, "tokens_salida": 0,
@@ -253,6 +280,7 @@ class Motor:
 
         limite = time.monotonic() + p.max_seg
         motivo: Dict[str, Optional[str]] = {"v": None}
+        filtro = FiltroPensamiento()
 
         def on_delta(texto: str) -> bool:
             # Tras un STOP el pipeline puede llamar una vez mas para vaciar su
@@ -263,12 +291,16 @@ class Motor:
             if time.monotonic() > limite:
                 motivo["v"] = motivo["v"] or "timeout"
                 return False
-            if texto:
-                trabajo.emitir("delta", texto)
+            salida = filtro.agregar(texto) if texto else ""
+            if salida:
+                trabajo.emitir("delta", salida)
             return True
 
         inicio = time.monotonic()
         res: Resultado = self.backend.generar(mensajes, p, on_delta)
+        resto = filtro.fin()
+        if resto and not trabajo.cancelado.is_set():
+            trabajo.emitir("delta", resto)
         seg = max(time.monotonic() - inicio, 1e-3)
         fin = motivo["v"] or ("length" if res.tokens_salida >= p.max_new_tokens else "stop")
         tps = round(res.tokens_salida / seg, 1)
@@ -276,7 +308,7 @@ class Motor:
         log.info("%s: %s | espera %.1fs | %d+%d tokens | %.1fs | %.1f tok/s",
                  trabajo.origen, fin, espera, res.tokens_entrada, res.tokens_salida, seg, tps)
         trabajo.emitir("fin", self._fin(
-            trabajo, fin, texto=res.texto, tokens_entrada=res.tokens_entrada,
+            trabajo, fin, texto=quitar_pensamiento(res.texto), tokens_entrada=res.tokens_entrada,
             tokens_salida=res.tokens_salida, segundos=round(seg, 2), tps=tps,
             ttft_ms=res.ttft_ms, contexto=contexto))
 
@@ -299,7 +331,8 @@ class Motor:
             raise DemasiadoLargo("el ultimo mensaje debe ser del usuario")
 
         costos = [b.contar(m["content"]) + b.overhead for m in resto]
-        usado = sum(b.contar(m["content"]) + b.overhead for m in sistema) + costos[-1] + 3
+        generacion = getattr(b, "tokens_generacion", 3)   # "<|im_start|>assistant\n" y similares
+        usado = sum(b.contar(m["content"]) + b.overhead for m in sistema) + costos[-1] + generacion
         if usado > presupuesto:
             raise DemasiadoLargo(
                 f"El mensaje ocupa ~{usado} tokens y solo caben {presupuesto} "

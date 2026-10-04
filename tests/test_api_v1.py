@@ -75,3 +75,20 @@ def test_chat_completions_validaciones(fabricar):
 def test_sin_auth_en_lan(fabricar):
     c = fabricar(GLUBIA_AUTH="0")
     assert c.get("/v1/models").status_code == 200
+
+
+def test_sustitutos_sueltos_en_v1_no_dan_500(fabricar):
+    """Un emoji cortado a la mitad ("\\ud83d") en cualquier campo de texto: nunca 500."""
+    c = fabricar(GLUBIA_API_KEYS="k1")
+    h = {"Authorization": "Bearer k1", "Content-Type": "application/json"}
+    cuerpos = [
+        b'{"model": "m\\ud800", "messages": [{"role": "user", "content": "hola \\ud800"}], "max_tokens": 5}',
+        b'{"messages": [{"role": "system", "content": "\\ud800"}, {"role": "user", "content": "[[sistema]]"}],'
+        b' "max_tokens": 5}',
+        b'{"messages": [{"role": "user", "content": "x"}], "stop": ["\\udc00"], "max_tokens": 5}',
+        b'{"messages": [{"role": "user", "content": "x \\ud800"}], "max_tokens": 5, "stream": true}',
+    ]
+    for cuerpo in cuerpos:
+        r = c.post("/v1/chat/completions", content=cuerpo, headers=h)
+        assert r.status_code == 200, (cuerpo, r.status_code, r.text)
+        r.content.decode("utf-8")

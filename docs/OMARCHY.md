@@ -18,7 +18,7 @@ pero igual.
 ## Instalación
 
 ```bash
-git clone https://github.com/<tu-usuario>/glubia.git ~/glubia
+git clone https://github.com/JuanPabloAvendano/GlubIA.git ~/glubia
 cd ~/glubia
 scripts/instalar-omarchy.sh
 ```
@@ -63,6 +63,21 @@ curl -s 127.0.0.1:8081/readyz          # {"status":"listo","device":"GPU",...}
 scripts/humo.sh                        # prueba de humo completa
 docker compose exec glubia clinfo -l   # ¿ve el contenedor la GPU?
 ```
+
+## Verificación en dos pasos y buzón
+
+Una vez, con el stack levantado:
+
+```bash
+docker compose exec glubia python -m glubia.identidad activar   # QR para tu app de autenticación
+```
+
+Desde ese momento el login pide contraseña y código, y `/buzon` (en `:8081` o `ia.tu-dominio.com`)
+queda disponible. Lo que te envíes aparece en `~/glubia/buzon/archivos/AAAA-MM-DD/`
+(`GLUBIA_BUZON_HOST` en `.env` para usar otra carpeta, p. ej. un disco aparte). Detalles en
+`BUZON.md`.
+
+Inclúyelo en tus copias: `datos` (secreto de sesión, identidad, conversaciones) y `buzon`.
 
 ## Acceso desde la LAN
 

@@ -27,15 +27,22 @@
   const sugerencias = $("#sugerencias");
   const estado = $("#estado");
   const estadoTexto = $("#estado-texto");
+  // La respuesta se repinta con cada trozo: si la transcripcion fuera una region viva, un lector
+  // de pantalla la leeria a pedazos. Se anuncia una sola vez, completa, en esta region aparte.
+  const anuncio = $("#anuncio");
+  const anunciar = (texto) => { if (anuncio) { anuncio.textContent = ""; setTimeout(() => { anuncio.textContent = texto; }, 50); } };
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // La pagina sabe si hay un medio de contacto publicado (lo pone construir.py).
+  const conContacto = document.body.dataset.contacto !== "0";
+  const ESCRIBEME = conContacto ? " Puedes escribirme abajo." : " Vuelve a intentarlo más tarde.";
   const TEXTOS = {
     comprobando: "Comprobando si está despierta…",
     online: "Despierta. Suele responder en unos segundos.",
     busy: "Ocupada con otras preguntas. La tuya esperará su turno.",
     loading: "Despertando: el modelo se está cargando. Prueba en un minuto.",
-    offline: "Dormida: mi computador está apagado ahora mismo. Puedes escribirme abajo.",
-    off: "La IA no está disponible en este momento. Puedes escribirme abajo.",
+    offline: "Dormida: mi computador está apagado ahora mismo." + ESCRIBEME,
+    off: "La IA no está disponible en este momento." + ESCRIBEME,
   };
 
   let historial = [];       // [{role, content}] de esta visita; no se guarda
@@ -43,7 +50,9 @@
   let maxChars = 600;
   let estadoActual = "comprobando";
 
-  class Aviso extends Error {}
+  class Aviso extends Error {
+    constructor(mensaje, status = 0) { super(mensaje); this.status = status; }
+  }
 
   // ------------------------------------------------------------------ estado
 
@@ -70,13 +79,16 @@
       boton.textContent = "Preguntar";
       boton.disabled = !puedePreguntar() || !entrada.value.trim();
     }
+    // Las sugerencias no deben parecer pulsables si no van a hacer nada.
+    for (const b of sugerencias.querySelectorAll("button")) b.disabled = !puedePreguntar() || !!control;
   }
 
   async function revisar() {
     try {
       const r = await fetch(URL_INFO, { cache: "no-store" });
-      if (r.status === 404) { ponerEstado("off"); return; }
-      if (!r.ok) throw new Error(String(r.status));
+      if (r.status === 429) return;                  // demasiadas consultas: no cambia nada
+      if (r.status >= 500) { ponerEstado("offline"); return; }   // tunel sin equipo detras (502/530...)
+      if (!r.ok) { ponerEstado("off"); return; }     // 404 = IA no publicada; 403 = bloqueada
       const j = await r.json();
       if (j.limits && j.limits.max_chars) {
         maxChars = j.limits.max_chars;
@@ -98,6 +110,7 @@
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = texto;
+      b.disabled = !puedePreguntar();
       b.addEventListener("click", () => {
         if (!puedePreguntar() || control) return;
         preguntar(texto);
@@ -110,14 +123,23 @@
 
   // Convierte la respuesta en nodos sin interpretar HTML del modelo:
   // **negrita**, saltos de linea, enlaces http(s) y correos.
-  const PATRON = /(\*\*[^*\n]+\*\*|https?:\/\/[^\s<>()]+[^\s<>().,;:!?]|[\w.+-]+@[\w-]+\.[\w.-]*\w)/g;
+  // [texto](https://...) tambien: los modelos lo escriben a menudo aunque se les pida que no.
+  const PATRON = /(\[[^\]\n]{1,200}\]\(https?:\/\/[^\s<>()]+\)|\*\*[^*\n]+\*\*|https?:\/\/[^\s<>()]+[^\s<>().,;:!?]|[\w.+-]+@[\w-]+\.[\w.-]*\w)/g;
 
   function enLinea(destino, texto) {
     let ultimo = 0;
     for (const m of texto.matchAll(PATRON)) {
       agregarTexto(destino, texto.slice(ultimo, m.index));
       const t = m[0];
-      if (t.startsWith("**")) {
+      if (t.startsWith("[")) {
+        const corte = t.indexOf("](");
+        const a = document.createElement("a");
+        a.href = t.slice(corte + 2, -1);
+        a.textContent = t.slice(1, corte);
+        a.rel = "noopener nofollow";
+        a.target = "_blank";
+        destino.append(a);
+      } else if (t.startsWith("**")) {
         const b = document.createElement("strong");
         b.textContent = t.slice(2, -2);
         destino.append(b);
@@ -160,6 +182,14 @@
   function aviso(nodo, mensaje) {
     nodo.className = "aviso";
     nodo.textContent = mensaje;
+    anunciar(mensaje);
+  }
+
+  function nota(nodo, mensaje) {
+    const p = document.createElement("p");
+    p.className = "nota-corte";
+    p.textContent = mensaje;
+    nodo.append(p);
   }
 
   // ------------------------------------------------------------------ preguntar
@@ -187,6 +217,7 @@
     actualizarBoton();
 
     let acc = "";
+    let completa = false;
     try {
       const r = await fetch(URL_PREGUNTAR, {
         method: "POST",
@@ -196,8 +227,8 @@
       });
       if (!r.ok) {
         let msg = "No pude responder ahora mismo. Intenta de nuevo en un momento.";
-        try { const j = await r.json(); msg = j.error || j.detail || msg; } catch (e) { /* cuerpo vacio */ }
-        throw new Aviso(msg);
+        try { const j = await r.json(); msg = (typeof j.error === "string" && j.error) || (typeof j.detail === "string" && j.detail) || msg; } catch (e) { /* cuerpo vacio */ }
+        throw new Aviso(msg, r.status);
       }
       const lector = r.body.getReader();
       const dec = new TextDecoder();
@@ -222,14 +253,19 @@
           }
           if (d.delta) { acc += d.delta; pintar(a, acc, true); }
           else if (d.error) { throw new Aviso(d.error); }
-          else if (d.done) { break leer; }
+          else if (d.done) { completa = true; break leer; }
         }
       }
       if (acc.trim()) {
         pintar(a, acc, false);
+        anunciar(acc.trim());
+        if (!completa) nota(a, "La conexión se cortó antes de terminar la respuesta.");
         historial.push({ role: "user", content: texto }, { role: "assistant", content: acc.trim() });
-      } else {
+      } else if (completa) {
         aviso(a, "No obtuve respuesta. Prueba a preguntarlo de otra forma.");
+      } else {
+        // El stream se cerro sin respuesta ni fin (p. ej. el tunel corto mientras esperaba en cola).
+        throw new Error("stream cortado");
       }
     } catch (e) {
       if (e.name === "AbortError") {
@@ -239,11 +275,20 @@
         } else {
           aviso(a, "Pregunta cancelada.");
         }
-      } else if (e instanceof Aviso) {
-        aviso(a, e.message);
       } else {
-        aviso(a, "No pude conectar con la IA. Puede que mi computador se haya apagado.");
-        revisar();
+        const mensaje = e instanceof Aviso ? e.message
+          : "No pude conectar con la IA. Puede que mi computador se haya apagado." + (conContacto ? " Puedes escribirme abajo." : "");
+        if (acc.trim()) {
+          // Lo que ya llego sigue valiendo: se conserva y se avisa debajo.
+          pintar(a, acc, false);
+          nota(a, mensaje);
+          anunciar(acc.trim() + " " + mensaje);
+        } else {
+          aviso(a, mensaje);
+          // La pregunta no se pierde: vuelve a la caja para reintentar.
+          if (!entrada.value.trim()) { entrada.value = texto; actualizarContador(); }
+        }
+        if (!(e instanceof Aviso) || e.status >= 500) revisar();
       }
     } finally {
       control = null;

@@ -1,5 +1,7 @@
-# Actualizaciones de dependencias por pull request semanal. El CI las prueba
-# (incluido OpenVINO real) antes de que decidas fusionarlas.
+# Actualizaciones de dependencias por pull request. El CI las prueba (incluido
+# OpenVINO real) antes de que decidas fusionarlas. Agrupadas para que lleguen
+# pocos PR: uno de OpenVINO, uno de la parte web, uno de herramientas de
+# desarrollo y uno mensual de acciones de GitHub.
 version: 2
 updates:
   - package-ecosystem: pip
@@ -9,10 +11,19 @@ updates:
       openvino:
         patterns: ["openvino*"]
       web:
-        patterns: ["fastapi", "starlette", "uvicorn", "pydantic*", "anyio"]
+        patterns: ["fastapi", "uvicorn", "pydantic", "segno"]
+      desarrollo:
+        patterns: ["pytest", "httpx", "ruff", "openai"]
   - package-ecosystem: docker
     directory: "/"
     schedule: { interval: weekly, day: monday }
+    ignore:
+      # La base se queda en la LTS para la que Intel publica el runtime de GPU
+      # (24.04). Pasar a la siguiente LTS se hace a mano, tras probar la GPU.
+      - dependency-name: "ubuntu"
   - package-ecosystem: github-actions
     directory: "/"
     schedule: { interval: monthly }
+    groups:
+      acciones:
+        patterns: ["*"]

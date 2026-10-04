@@ -14,4 +14,4 @@ El paquete se organiza asi:
     app.py             ensambla la aplicacion FastAPI
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"

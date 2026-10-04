@@ -1,0 +1,110 @@
+# ============================================================================
+#  Contenido del portafolio. TODO lo que hay aqui es PUBLICO: se publica en la
+#  pagina y lo lee la IA. No pongas nada que no quieras que cualquiera lea.
+#
+#  Despues de editar:   python portafolio/construir.py
+#  Genera sitio/index.html, sitio/cv.html, sitio/404.html, sitio/_headers,
+#  sitio/robots.txt, sitio/sitemap.xml y perfil/perfil.md (lo que sabe la IA).
+#
+#  Los textos marcados REVISAR son un borrador general con lo que me contaste.
+#  Un campo vacio ("") no se muestra. Para publicar en tu dominio:
+#      python portafolio/construir.py --publicar     (falla si queda algo por completar)
+# ============================================================================
+
+[sitio]
+url = ""          # https://tu-dominio.com cuando lo compres (enlaces, CV, sitemap)
+api = ""          # vacio = la IA esta en el mismo dominio (Caddy en Omarchy).
+                  # Con la pagina en Cloudflare Pages: "https://api.tu-dominio.com"
+idioma = "es"
+descripcion = "Juan Pablo Avendaño Duque: comercio en línea, infraestructura propia y una IA que corre en su propio equipo. Pregúntale lo que quieras saber de él."
+
+[persona]
+nombre = "Juan Pablo Avendaño Duque"
+titular = ["Juan Pablo", "Avendaño"]     # el nombre grande de la portada, una linea por elemento
+bajada = "Construyo canales de venta en línea, servidores propios y una IA que corre en mi computador, desde Colombia."   # REVISAR
+ubicacion = "Colombia"
+sobre_mi = """
+Me gusta construir las herramientas que uso: desde una tienda de ropa en línea hasta el servidor y la inteligencia artificial que responden en esta página. Trabajo con la idea de que los datos de cada quien deben quedarse en su propio equipo siempre que se pueda.
+"""   # REVISAR
+
+[[proyectos]]
+nombre = "GlubIA"
+estado = "En desarrollo"
+resumen = "Una inteligencia artificial que corre completa en mi propio portátil. Tiene interfaz web, una API compatible con la de OpenAI y es la que responde las preguntas de esta página: ninguna conversación sale de mi equipo."
+para_ia = "GlubIA funciona con OpenVINO sobre la tarjeta gráfica integrada del portátil de Juan y se despliega en contenedores sobre Linux (Omarchy). El código es abierto y está en GitHub."
+etiquetas = ["IA local", "Python", "OpenVINO", "Docker", "Linux"]
+enlaces = [{ texto = "Código en GitHub", url = "https://github.com/JuanPabloAvendano/GlubIA" }]
+
+[[proyectos]]
+nombre = "American Urban"
+estado = "En marcha"
+resumen = "Tienda de ropa en línea. Nació con el apoyo de una empresa de confección que no vendía por internet, y la idea es llevar ese canal a más confeccionistas del país."
+para_ia = "Los pedidos salen desde Rionegro, Antioquia. Instagram de la tienda: @american_urban97."
+etiquetas = ["Comercio electrónico", "Confección", "Logística"]
+enlaces = [{ texto = "Ver la tienda", url = "https://americanurban.mitiendanube.com/" }]
+
+[[proyectos]]
+nombre = "Nodo de red"
+estado = "Herramienta propia"
+resumen = "Programa para pasar archivos entre mis equipos de la red local con aprobación por PIN y permisos que caducan solos."
+para_ia = "Se diseñó sin ejecución remota a propósito: solo recibe archivos y los deja en una carpeta."
+etiquetas = ["Python", "Redes", "Seguridad"]
+enlaces = []
+
+[[proyectos]]
+nombre = "Ciberseguridad"
+estado = "Aprendizaje continuo"
+resumen = "Aprendo seguridad ofensiva montando laboratorios propios en la nube para practicar contra mis propios sistemas, y participo en eventos de hacking de caja negra organizados por empresas."
+para_ia = ""
+etiquetas = ["Pentesting", "Laboratorios", "Linux"]
+enlaces = []
+
+# Habilidades, experiencia y formacion aparecen en la pagina y en el CV cuando
+# tengan contenido. Ejemplos (descomenta y ajusta):
+#
+# [habilidades]
+# Programacion = ["Python", "Bash"]
+# Infraestructura = ["Docker", "Linux", "Cloudflare"]
+#
+# [[experiencia]]
+# cargo = "Fundador"
+# organizacion = "American Urban"
+# desde = "2026"
+# hasta = ""                      # vacio = actualidad
+# descripcion = "Tienda de ropa en linea."
+#
+# [[formacion]]
+# titulo = ""
+# institucion = ""
+# desde = ""
+# hasta = ""
+
+[[contacto]]
+tipo = "GitHub"
+texto = "github.com/JuanPabloAvendano"
+url = "https://github.com/JuanPabloAvendano"
+
+[[contacto]]
+tipo = "Correo"
+texto = ""        # COMPLETAR: p. ej. contacto@tu-dominio.com con Email Routing de Cloudflare
+url = ""
+
+[[contacto]]
+tipo = "LinkedIn"
+texto = ""
+url = ""
+
+# Medios: documentos, audios y videos. Se muestran cuando haya alguno.
+#   tipo = "video"      con  youtube = "ID de 11 caracteres"
+#   tipo = "audio"      con  url = "https://..."  (mp3/ogg en un CDN, p. ej. R2)
+#   tipo = "documento"  con  url, formato ("PDF") y peso ("1,2 MB")
+#   tipo = "enlace"     con  url
+# [[medios]]
+# tipo = "video"
+# titulo = "Cómo funciona GlubIA"
+# youtube = "dQw4w9WgXcQ"
+# descripcion = ""
+
+[ia]
+sugerencias = ["¿Quién es Juan?", "¿Qué es GlubIA y cómo funciona?", "¿Qué hace American Urban?", "¿Cómo lo contacto?"]
+conocimiento = "ia.md"     # texto adicional que solo usa la IA (tambien es publico)

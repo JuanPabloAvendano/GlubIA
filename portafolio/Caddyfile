@@ -31,11 +31,13 @@
 }
 
 (hacia_glubia) {
+	# Sin flush_interval: Caddy ya envia al momento las respuestas text/event-stream
+	# (SSE). Con "flush_interval -1", Caddy 2.6 no avisaba a GlubIA cuando el visitante
+	# abandonaba una peticion SIN streaming y el modelo seguia trabajando para nadie.
 	reverse_proxy glubia:11434 {
 		# Caddy SOBRESCRIBE X-Real-IP: GlubIA solo la acepta de esta IP
 		# (GLUBIA_PROXIES) para sus limites por visitante.
 		header_up X-Real-IP {client_ip}
-		flush_interval -1
 	}
 }
 
@@ -43,12 +45,23 @@
 	import cabeceras
 	@estaticos path *.css *.js *.svg *.png *.jpg *.jpeg *.webp *.woff2 *.pdf
 
-	handle /api/preguntar {
+	# Solo los metodos que usa la pagina. Con cualquier otro (PUT, DELETE, TRACE...)
+	# la peticion no llega a GlubIA: cae en los archivos estaticos (404).
+	@preguntar {
+		path /api/preguntar
+		method POST OPTIONS
+	}
+	@info {
+		path /api/info
+		method GET OPTIONS
+	}
+
+	handle @preguntar {
 		rewrite * /v1/public/ask
 		import hacia_glubia
 	}
 
-	handle /api/info {
+	handle @info {
 		rewrite * /v1/public/info
 		import hacia_glubia
 	}
@@ -56,11 +69,24 @@
 	handle {
 		root * /srv/portafolio
 		encode zstd gzip
-		header {
-			Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-		}
+		# La politica de contenido completa va en cada HTML (la calcula construir.py segun
+		# lo que la pagina usa: videos, audios, API en otro dominio...). Aqui solo lo que
+		# no se puede poner en un <meta>.
+		header Content-Security-Policy "frame-ancestors 'none'"
 		header @estaticos Cache-Control "public, max-age=3600"
 		file_server
+	}
+
+	# Rutas inexistentes: la 404 del sitio (usa rutas absolutas, vale para /lo/que/sea).
+	handle_errors {
+		@no_existe expression {err.status_code} == 404
+		handle @no_existe {
+			root * /srv/portafolio
+			header Content-Security-Policy "frame-ancestors 'none'"
+			rewrite * /404.html
+			file_server
+		}
+		respond "{err.status_code} {err.status_text}"
 	}
 }
 

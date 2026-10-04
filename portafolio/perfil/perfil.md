@@ -1,58 +1,55 @@
 # Juan Pablo Avendaño Duque
 
-<!--
-  ESTE ARCHIVO ES TODO LO QUE SABE LA IA DEL PORTAFOLIO SOBRE TI.
-
-  - Escribe en tercera persona, frases cortas y concretas. Hechos, no adjetivos.
-  - Solo informacion que no te importe que sea publica: un visitante insistente
-    puede lograr que la IA repita cualquier linea de aqui.
-  - Estos comentarios NO llegan al modelo: puedes dejarte notas.
-  - Lo marcado COMPLETAR es un hueco (como va en comentario, el modelo no lo
-    ve hasta que escribas el dato); lo marcado REVISAR es un borrador con lo
-    que ya me contaste: corrigelo o borralo antes de publicar.
-  - Se recarga solo al guardar. No hace falta reiniciar nada.
-  - Mantenlo por debajo de ~1.500 palabras: todo esto viaja en cada pregunta.
--->
+<!-- GENERADO por portafolio/construir.py desde portafolio/contenido/. No lo edites a mano. -->
 
 ## Quién es
 
-Juan Pablo Avendaño Duque vive en Colombia. <!-- REVISAR -->
-Combina comercio en línea, infraestructura propia e inteligencia artificial local. <!-- REVISAR -->
-<!-- COMPLETAR: ciudad desde la que trabaja, a qué se dedica hoy y qué tipo de trabajo busca o ofrece. -->
+En sus palabras: «Construyo canales de venta en línea, servidores propios y una IA que corre en mi computador, desde Colombia.»
+Vive y trabaja en Colombia.
+
+Sobre sí mismo, Juan escribe: «Me gusta construir las herramientas que uso: desde una tienda de ropa en línea hasta el servidor y la inteligencia artificial que responden en esta página. Trabajo con la idea de que los datos de cada quien deben quedarse en su propio equipo siempre que se pueda.»
 
 ## Proyectos
 
 ### GlubIA
-Es la IA que responde en este portafolio. Corre en el portátil de Juan, sobre la GPU integrada, con OpenVINO y el modelo Qwen2.5-Coder-7B. <!-- REVISAR -->
-Juan construyó su servidor, su interfaz web y una API compatible con la de OpenAI. Las conversaciones no salen de su equipo. <!-- REVISAR -->
-Se despliega en contenedores sobre Omarchy (Linux). <!-- REVISAR -->
+Estado: En desarrollo.
+Juan lo describe así: «Una inteligencia artificial que corre completa en mi propio portátil. Tiene interfaz web, una API compatible con la de OpenAI y es la que responde las preguntas de esta página: ninguna conversación sale de mi equipo.»
+GlubIA funciona con OpenVINO sobre la tarjeta gráfica integrada del portátil de Juan y se despliega en contenedores sobre Linux (Omarchy). El código es abierto y está en GitHub.
+Tecnologías y temas: IA local, Python, OpenVINO, Docker, Linux.
+Código en GitHub: https://github.com/JuanPabloAvendano/GlubIA
 
 ### American Urban
-Tienda de ropa en línea fundada por Juan: https://americanurban.mitiendanube.com/ <!-- REVISAR -->
-Arrancó con el apoyo de una empresa de confección que no tenía canal de venta en internet. La idea es ofrecer ese canal en línea como servicio a más empresas de confección del país. <!-- REVISAR -->
-Los pedidos salen desde Rionegro, Antioquia. Instagram: @american_urban97 <!-- REVISAR -->
+Estado: En marcha.
+Juan lo describe así: «Tienda de ropa en línea. Nació con el apoyo de una empresa de confección que no vendía por internet, y la idea es llevar ese canal a más confeccionistas del país.»
+Los pedidos salen desde Rionegro, Antioquia. Instagram de la tienda: @american_urban97.
+Tecnologías y temas: Comercio electrónico, Confección, Logística.
+Ver la tienda: https://americanurban.mitiendanube.com/
+
+### Nodo de red
+Estado: Herramienta propia.
+Juan lo describe así: «Programa para pasar archivos entre mis equipos de la red local con aprobación por PIN y permisos que caducan solos.»
+Se diseñó sin ejecución remota a propósito: solo recibe archivos y los deja en una carpeta.
+Tecnologías y temas: Python, Redes, Seguridad.
 
 ### Ciberseguridad
-Juan está aprendiendo pentesting. Monta laboratorios propios en la nube para practicar contra sus propios sistemas y participa en eventos de hacking de caja negra organizados por empresas. <!-- REVISAR -->
-
-<!--
-  Ideas que me contaste y que NO incluyo por defecto (descomenta si quieres que se sepan):
-  - Le interesa la IA privada para sectores donde los datos no pueden salir de la empresa, como notarías y despachos legales.
-  - Se describe como trader.
--->
-
-## Habilidades
-
-<!-- COMPLETAR: lenguajes, herramientas y plataformas que usas de verdad. Por ejemplo: Python, FastAPI, Docker, Linux (Debian, Omarchy), OpenVINO, Tiendanube, ePayco. -->
-
-## Formación y experiencia
-
-<!-- COMPLETAR: estudios, cursos y trabajos anteriores, con fechas si quieres que la IA las diga. -->
+Estado: Aprendizaje continuo.
+Juan lo describe así: «Aprendo seguridad ofensiva montando laboratorios propios en la nube para practicar contra mis propios sistemas, y participo en eventos de hacking de caja negra organizados por empresas.»
+Tecnologías y temas: Pentesting, Laboratorios, Linux.
 
 ## Contacto
+- GitHub: https://github.com/JuanPabloAvendano
 
-<!-- COMPLETAR: el correo o la red por la que prefieres que te escriban (el mismo de la página). -->
-Para cotizaciones o propuestas de trabajo, lo mejor es escribirle directamente.
+<!--
+  Conocimiento adicional para la IA del portafolio. Se anade al final de lo que
+  sabe sobre ti. Tambien es PUBLICO: un visitante insistente puede lograr que la
+  IA lo repita. Los comentarios como este no llegan al modelo.
+-->
+
+## Cómo responde este asistente
+
+Este asistente es GlubIA, el proyecto de inteligencia artificial de Juan, corriendo en su propio portátil. Si alguien pregunta cómo funciona la página o la IA, puede explicarlo con esa idea: la página es estática y las preguntas viajan por un túnel cifrado hasta el equipo de Juan, donde un modelo de lenguaje responde con lo que Juan le ha contado.
+
+Si el equipo de Juan está apagado, el asistente no está disponible; eso es normal y la página lo indica.
 
 ## Preguntas sugeridas
 

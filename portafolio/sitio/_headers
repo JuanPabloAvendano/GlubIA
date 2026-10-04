@@ -1,0 +1,10 @@
+# Cabeceras para Cloudflare Pages (GENERADO por construir.py).
+# La politica de contenido (CSP) va dentro de cada HTML, calculada segun lo que usa.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+/fuentes/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Buzón · {{TITULO}}</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230d1117'/><path d='M7 12l9 6 9-6v10H7z' fill='none' stroke='%235ee6a8' stroke-width='2.2' stroke-linejoin='round'/><path d='M7 12h18' stroke='%235ee6a8' stroke-width='2.2'/></svg>">
+<style>
+  :root{
+    --bg:#0b0e13; --bg2:#0f141b; --bg3:#141b24; --line:#1f2933;
+    --tx:#dce3ea; --tx2:#8b97a6; --tx3:#5d6a79;
+    --ac:#5ee6a8; --ac2:#2f8f68; --err:#f7768e; --warn:#e0af68;
+    --mono:ui-monospace,"JetBrains Mono","Cascadia Code","SF Mono",Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{min-height:100%}
+  body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  button,input,textarea{font:inherit;color:inherit}
+  button{cursor:pointer;background:none;border:0}
+  a{color:var(--ac)}
+  [hidden]{display:none !important}
+  :focus-visible{outline:2px solid var(--ac);outline-offset:2px;border-radius:6px}
+
+  header{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);
+    background:var(--bg2);position:sticky;top:0;z-index:5}
+  .brand{font-weight:600;font-size:15px;letter-spacing:-.3px}
+  .brand b{color:var(--ac)}
+  .brand span{color:var(--tx2);font-weight:500}
+  .uso{margin-left:auto;font:12px var(--mono);color:var(--tx2);display:flex;align-items:center;gap:8px}
+  .barra{width:120px;height:6px;border-radius:3px;background:var(--bg3);overflow:hidden}
+  .barra i{display:block;height:100%;background:var(--ac2)}
+  .hb{border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:12.5px;color:var(--tx2);text-decoration:none}
+  .hb:hover{border-color:var(--ac2);color:var(--ac)}
+
+  main{max-width:880px;margin:0 auto;padding:22px 18px 60px}
+  h2{font-size:15px;font-weight:600;margin:30px 0 10px}
+  .nota-pie{color:var(--tx3);font-size:12.5px}
+
+  .card{max-width:360px;margin:12vh auto 0;text-align:center}
+  .card h1{font:600 24px/1 var(--sans);margin:0 0 6px}
+  .card h1 b{color:var(--ac)}
+  .card p{color:var(--tx2);font-size:13px;margin:0 0 20px}
+  .card input{width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:9px;padding:11px 13px;
+    font-family:var(--mono);outline:none;margin-bottom:10px}
+  .card input:focus{border-color:var(--ac2)}
+  .card .codigo{letter-spacing:.35em;text-align:center;font-size:18px}
+  .btn{background:var(--ac);color:#07110c;font-weight:600;border-radius:9px;padding:10px 16px}
+  .btn:disabled{opacity:.5;cursor:default}
+  .card .btn{width:100%}
+  .msg-err{color:var(--err);font-size:12.5px;min-height:18px;margin-top:10px}
+  .aviso{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:9px;
+    padding:14px 16px;text-align:left;font-size:13px;color:var(--tx2)}
+  .aviso code{font-family:var(--mono);color:var(--tx);background:var(--bg3);padding:1px 6px;border-radius:4px}
+
+  .zona{border:1.5px dashed #2c3a48;border-radius:12px;padding:30px 18px;text-align:center;color:var(--tx2);
+    background:var(--bg2);transition:border-color .15s,background .15s}
+  .zona.sobre{border-color:var(--ac);background:#0f1a16}
+  .zona strong{color:var(--tx);display:block;font-size:15px;margin-bottom:4px}
+  .zona .btn{margin-top:14px}
+
+  .fila{display:grid;grid-template-columns:1fr auto;gap:4px 14px;padding:11px 2px;border-bottom:1px solid #131a22;align-items:center}
+  .fila .nom{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+  .fila .meta{grid-column:1;font:11.5px var(--mono);color:var(--tx3)}
+  .fila .acc{grid-row:1 / span 2;grid-column:2;display:flex;gap:6px}
+  .fila .acc button,.fila .acc a{font:11.5px var(--mono);color:var(--tx2);border:1px solid var(--line);border-radius:6px;
+    padding:3px 9px;text-decoration:none}
+  .fila .acc button:hover,.fila .acc a:hover{color:var(--ac);border-color:var(--ac2)}
+  .fila .acc .peligro:hover{color:var(--err);border-color:var(--err)}
+  .prog{grid-column:1;height:4px;border-radius:2px;background:var(--bg3);overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
+  .estado-ok{color:var(--ac)} .estado-err{color:var(--err)} .estado-pend{color:var(--warn)}
+  .vacio{color:var(--tx3);padding:14px 2px;font-size:13px}
+
+  form.nota{display:grid;gap:8px}
+  form.nota input,form.nota textarea{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;outline:none}
+  form.nota input:focus,form.nota textarea:focus{border-color:var(--ac2)}
+  form.nota textarea{min-height:120px;resize:vertical;font-family:var(--mono);font-size:12.5px}
+  form.nota .pie{display:flex;align-items:center;gap:12px}
+  form.nota .pie span{color:var(--tx3);font:11.5px var(--mono);margin-right:auto}
+
+  #toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,16px);background:var(--bg3);border:1px solid var(--line);
+    border-radius:8px;padding:8px 15px;font-size:12.5px;opacity:0;pointer-events:none;transition:.22s;z-index:60}
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+  @media (max-width:600px){ .barra{width:70px} .uso span{display:none} }
+</style>
+</head>
+<body>
+
+<!-- ====== Acceso ====== -->
+<section id="acceso" hidden>
+  <form class="card" id="loginForm" autocomplete="on">
+    <h1>Glub<b>IA</b> · buzón</h1>
+    <p>Verifica tu identidad para enviar o ver archivos.</p>
+    <input id="pw" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+    <input id="otp" class="codigo" type="text" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7"
+           placeholder="000000" autocomplete="one-time-code" aria-label="Código de verificación" required>
+    <button class="btn" id="loginBtn" type="submit">Entrar</button>
+    <div class="msg-err" id="loginErr" role="alert"></div>
+  </form>
+</section>
+
+<section id="sinTotp" hidden>
+  <div class="card">
+    <h1>Glub<b>IA</b> · buzón</h1>
+    <div class="aviso" id="sinTotpTxt">
+      El buzón solo funciona con la verificación en dos pasos activada. En el equipo donde corre GlubIA ejecuta
+      <code>python -m glubia.identidad activar</code> (en Omarchy:
+      <code>docker compose exec glubia python -m glubia.identidad activar</code>) y escanea el código con tu
+      aplicación de autenticación. Después recarga esta página.
+    </div>
+  </div>
+</section>
+
+<!-- ====== Aplicación ====== -->
+<div id="app" hidden>
+  <header>
+    <div class="brand">Glub<b>IA</b> <span>· buzón</span></div>
+    <div class="uso" title="Espacio usado del buzón"><span id="usoTxt">—</span><div class="barra"><i id="usoBar" style="width:0"></i></div></div>
+    <a class="hb" href="./">Chat</a>
+    <button class="hb" id="salir" type="button">Salir</button>
+  </header>
+
+  <main>
+    <div class="zona" id="zona">
+      <strong>Suelta aquí archivos de cualquier tipo</strong>
+      Documentos, comprimidos, chats exportados, audios… Se envían por partes, así que el tamaño no importa
+      y una subida cortada se puede reanudar.
+      <div><button class="btn" type="button" id="elegir">Elegir archivos</button></div>
+      <input type="file" id="archivos" multiple hidden>
+    </div>
+
+    <div id="cola"></div>
+
+    <h2>Nota rápida</h2>
+    <form class="nota" id="notaForm">
+      <input id="notaTitulo" type="text" maxlength="200" placeholder="Título (opcional)">
+      <textarea id="notaTexto" placeholder="Pega aquí un chat, ideas, enlaces… Se guarda como archivo Markdown." required></textarea>
+      <div class="pie"><span id="notaCont">0 caracteres</span><button class="btn" type="submit" id="notaBtn">Guardar nota</button></div>
+    </form>
+
+    <h2>Recibido</h2>
+    <div id="lista"><div class="vacio">Cargando…</div></div>
+    <p class="nota-pie">Nada de lo que hay aquí lo lee la IA ni se publica. Los archivos quedan en el equipo de GlubIA,
+      carpeta del buzón.</p>
+  </main>
+</div>
+
+<div id="toast" role="status"></div>
+<input type="file" id="reanudarArchivo" hidden>
+
+<script>
+"use strict";
+/* GlubIA · buzón. Sin dependencias. Rutas relativas: vale en LAN (http) y por el túnel (https). */
+
+const $ = s => document.querySelector(s);
+const DIFERENTES_A_LA_VEZ = 2;          // archivos subiendo en paralelo
+const REINTENTOS = 6;
+
+let parteBytes = 8 * 1024 * 1024, maxBytes = 0;
+const cola = [];                        // tareas de subida
+let activas = 0, pausado = false;
+
+/* ------------------------------------------------------------ utilidades */
+function toast(m){ const t = $("#toast"); t.textContent = m; t.classList.add("on");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 2600); }
+
+function tam(b){
+  if(b < 1024) return b + " B";
+  const u = ["KB","MB","GB","TB"]; let i = -1;
+  do { b /= 1024; i++; } while(b >= 1024 && i < u.length - 1);
+  return b.toFixed(b < 10 ? 1 : 0) + " " + u[i];
+}
+const fecha = s => s ? new Date(s * 1000).toLocaleString("es", {dateStyle:"medium", timeStyle:"short"}) : "";
+const espera = ms => new Promise(r => setTimeout(r, ms));
+
+class ErrorHttp extends Error { constructor(status, msg){ super(msg); this.status = status; } }
+
+async function api(ruta, opciones = {}){
+  const r = await fetch(ruta, Object.assign({ cache:"no-store" }, opciones,
+    opciones.body && typeof opciones.body === "string" ? { headers:{ "Content-Type":"application/json" } } : {}));
+  let j = null; try{ j = await r.json(); }catch(e){}
+  if(!r.ok) throw new ErrorHttp(r.status, (j && (j.detail || j.error)) || ("Error " + r.status));
+  return j;
+}
+
+/* ------------------------------------------------------------ acceso */
+function mostrar(id){ ["acceso","sinTotp","app"].forEach(x => $("#" + x).hidden = (x !== id)); }
+
+async function iniciar(){
+  let s;
+  try{ s = await api("api/session"); }
+  catch(e){ mostrar("sinTotp"); $("#sinTotpTxt").textContent = "No hay conexión con GlubIA."; return; }
+  if(!s.auth_required || !s.mailbox){
+    mostrar("sinTotp");
+    $("#sinTotpTxt").textContent = "El buzón está desactivado en este servidor (necesita GLUBIA_AUTH=1 y GLUBIA_BUZON=1).";
+    return;
+  }
+  if(!s.totp_required){ mostrar("sinTotp"); return; }
+  if(!s.authenticated || !s.verified){ mostrar("acceso"); setTimeout(() => $("#pw").focus(), 50); return; }
+  mostrar("app");
+  await refrescar();
+}
+
+$("#loginForm").onsubmit = async e => {
+  e.preventDefault();
+  const b = $("#loginBtn"); b.disabled = true; $("#loginErr").textContent = "";
+  try{
+    await api("api/login", { method:"POST", body: JSON.stringify({ password: $("#pw").value,
+      codigo: $("#otp").value.replace(/\s/g, "") }) });
+    $("#pw").value = ""; $("#otp").value = "";
+    mostrar("app"); await refrescar();
+    if(pausado){ pausado = false; bombear(); }
+  }catch(err){ $("#loginErr").textContent = err.message; $("#otp").value = ""; $("#otp").focus(); }
+  b.disabled = false;
+};
+
+$("#salir").onclick = async () => { try{ await fetch("api/logout", {method:"POST"}); }catch(e){} location.reload(); };
+
+function sesionCaducada(){
+  pausado = true;
+  mostrar("acceso");
+  $("#loginErr").textContent = "La sesión caducó. Vuelve a entrar: las subidas continúan donde iban.";
+}
+
+/* ------------------------------------------------------------ lista */
+async function refrescar(){
+  let j;
+  try{ j = await api("api/buzon"); }
+  catch(e){ if(e.status === 401) return sesionCaducada(); $("#lista").innerHTML = ""; toast(e.message); return; }
+  parteBytes = j.limites.parte_bytes; maxBytes = j.limites.max_bytes;
+  const u = j.uso, pct = Math.min(100, 100 * u.usado / Math.max(1, u.cuota));
+  $("#usoTxt").textContent = tam(u.usado) + " de " + tam(u.cuota);
+  $("#usoBar").style.width = pct.toFixed(1) + "%";
+  pintarLista(j.envios);
+}
+
+function pintarLista(envios){
+  const cont = $("#lista"); cont.innerHTML = "";
+  const visibles = envios.filter(e => !cola.some(t => t.id === e.id && !t.terminada));
+  if(!visibles.length){ cont.innerHTML = '<div class="vacio">Todavía no hay nada.</div>'; return; }
+  for(const e of visibles){
+    const f = document.createElement("div"); f.className = "fila";
+    const nom = document.createElement("div"); nom.className = "nom"; nom.textContent = e.nombre; nom.title = e.nombre;
+    const meta = document.createElement("div"); meta.className = "meta";
+    const acc = document.createElement("div"); acc.className = "acc";
+    if(e.estado === "completo"){
+      meta.textContent = tam(e.tamano) + " · " + fecha(e.completado) + (e.tipo === "nota" ? " · nota" : "") +
+        " · sha256 " + (e.sha256 || "").slice(0, 12) + "…";
+      const d = document.createElement("a"); d.textContent = "descargar";
+      d.href = "api/buzon/envios/" + encodeURIComponent(e.id) + "/descargar"; d.setAttribute("download", e.nombre);
+      const c = document.createElement("button"); c.type = "button"; c.textContent = "sha256";
+      c.onclick = () => copiar(e.sha256);
+      acc.append(d, c);
+    }else{
+      meta.innerHTML = '<span class="estado-pend"></span>';
+      meta.firstChild.textContent = "incompleto · " + (e.partes_recibidas || 0) + "/" + (e.partes || "?") +
+        " partes · " + tam(e.tamano) + " · " + fecha(e.creado);
+      const r = document.createElement("button"); r.type = "button"; r.textContent = "reanudar";
+      r.onclick = () => pedirReanudar(e);
+      acc.append(r);
+    }
+    const x = document.createElement("button"); x.type = "button"; x.className = "peligro"; x.textContent = "borrar";
+    x.onclick = () => borrar(e, x);
+    acc.append(x);
+    f.append(nom, acc, meta); cont.append(f);
+  }
+}
+
+function copiar(txt){
+  const ok = () => toast("sha256 copiado");
+  if(navigator.clipboard && isSecureContext){ navigator.clipboard.writeText(txt).then(ok, () => legado(txt, ok)); }
+  else legado(txt, ok);
+}
+function legado(txt, ok){
+  const t = document.createElement("textarea"); t.value = txt; t.style.cssText = "position:fixed;opacity:0;top:0";
+  document.body.appendChild(t); t.select();
+  try{ document.execCommand("copy"); ok(); }catch(e){ toast("No se pudo copiar"); }
+  document.body.removeChild(t);
+}
+
+async function borrar(e, boton){
+  if(boton.dataset.seguro !== "1"){
+    boton.dataset.seguro = "1"; boton.textContent = "¿seguro?";
+    setTimeout(() => { boton.dataset.seguro = ""; boton.textContent = "borrar"; }, 4000);
+    return;
+  }
+  try{ await api("api/buzon/envios/" + encodeURIComponent(e.id), { method:"DELETE" }); toast("Borrado"); }
+  catch(err){ if(err.status === 401) return sesionCaducada(); toast(err.message); }
+  refrescar();
+}
+
+/* ------------------------------------------------------------ subida por partes */
+function nuevaTarea(file, envio){
+  const t = { file, id: envio ? envio.id : null, enviados: 0, terminada: false, cancelada: false, xhr: null,
+              fila: document.createElement("div") };
+  t.fila.className = "fila";
+  t.fila.innerHTML = '<div class="nom"></div><div class="acc"><button type="button" class="peligro">cancelar</button></div>' +
+                     '<div class="prog"><i></i></div><div class="meta">en cola</div>';
+  t.fila.querySelector(".nom").textContent = file.name;
+  t.fila.querySelector("button").onclick = () => cancelar(t);
+  $("#cola").prepend(t.fila);
+  cola.push(t);
+  return t;
+}
+
+function progreso(t, extra){
+  const total = t.file.size || 1, pct = Math.min(100, 100 * (t.enviados + (extra || 0)) / total);
+  t.fila.querySelector(".prog i").style.width = pct.toFixed(1) + "%";
+  t.fila.querySelector(".meta").textContent = pct.toFixed(0) + "% · " + tam(t.enviados + (extra || 0)) + " de " + tam(t.file.size);
+}
+
+function estadoTarea(t, texto, clase){
+  const m = t.fila.querySelector(".meta"); m.textContent = texto; m.className = "meta " + (clase || "");
+}
+
+function cancelar(t){
+  t.cancelada = true;
+  if(t.xhr) t.xhr.abort();
+  estadoTarea(t, "cancelada (puedes reanudarla desde la lista)", "estado-pend");
+  t.fila.querySelector(".acc").innerHTML = "";
+}
+
+function encolar(files){
+  for(const f of files){
+    if(maxBytes && f.size > maxBytes){ toast(f.name + ": supera el máximo de " + tam(maxBytes)); continue; }
+    nuevaTarea(f);
+  }
+  bombear();
+}
+
+function bombear(){
+  if(pausado) return;
+  while(activas < DIFERENTES_A_LA_VEZ){
+    const t = cola.find(x => !x.terminada && !x.cancelada && !x.enCurso);
+    if(!t) break;
+    t.enCurso = true; activas++;
+    subir(t).finally(() => { t.enCurso = false; activas--; bombear(); });
+  }
+}
+
+async function sha256Hex(buf){
+  if(!(window.crypto && crypto.subtle && isSecureContext)) return null;   // en LAN por http no existe
+  const h = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function enviarParte(t, n, blob, sha){
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest(); t.xhr = x;
+    x.open("PUT", "api/buzon/envios/" + encodeURIComponent(t.id) + "/partes/" + n);
+    x.setRequestHeader("Content-Type", "application/octet-stream");
+    if(sha) x.setRequestHeader("X-Parte-Sha256", sha);
+    x.upload.onprogress = ev => { if(ev.lengthComputable) progreso(t, ev.loaded); };
+    x.onload = () => {
+      let j = null; try{ j = JSON.parse(x.responseText); }catch(e){}
+      if(x.status >= 200 && x.status < 300) resolve(j);
+      else reject(new ErrorHttp(x.status, (j && j.detail) || ("Error " + x.status)));
+    };
+    x.onerror = () => reject(new ErrorHttp(0, "Sin conexión"));
+    x.onabort = () => reject(new ErrorHttp(-1, "cancelada"));
+    x.send(blob);
+  });
+}
+
+async function subir(t){
+  try{
+    let faltan;
+    if(!t.id){
+      estadoTarea(t, "preparando…");
+      const e = await api("api/buzon/envios", { method:"POST",
+        body: JSON.stringify({ nombre: t.file.name, tamano: t.file.size, tipo: t.file.type || "" }) });
+      t.id = e.id; parteBytes = e.parte_bytes;
+      faltan = Array.from({length: e.partes}, (_, i) => i);
+    }else{
+      const e = await api("api/buzon/envios/" + encodeURIComponent(t.id));
+      parteBytes = e.parte_bytes; faltan = e.faltan;
+      t.enviados = (e.partes - faltan.length) * parteBytes;
+    }
+    for(const n of faltan){
+      if(t.cancelada) return;
+      const inicio = n * parteBytes, blob = t.file.slice(inicio, Math.min(t.file.size, inicio + parteBytes));
+      const sha = await sha256Hex(await blob.arrayBuffer());
+      for(let intento = 0; ; intento++){
+        try{ await enviarParte(t, n, blob, sha); break; }
+        catch(err){
+          if(err.status === -1 || t.cancelada) return;
+          if(err.status === 401){ sesionCaducada(); while(pausado) await espera(800); intento--; continue; }
+          const reintentable = err.status === 0 || err.status === 408 || err.status === 422 || err.status >= 500 && err.status !== 507;
+          if(!reintentable || intento >= REINTENTOS) throw err;
+          estadoTarea(t, "reintentando la parte " + (n + 1) + "… (" + err.message + ")", "estado-pend");
+          await espera(Math.min(30000, 1000 * 2 ** intento));
+        }
+      }
+      t.enviados = Math.min(t.file.size, t.enviados + blob.size);
+      progreso(t);
+    }
+    estadoTarea(t, "verificando…");
+    const fin = await api("api/buzon/envios/" + encodeURIComponent(t.id) + "/completar", { method:"POST" });
+    t.terminada = true;
+    t.fila.querySelector(".prog i").style.width = "100%";
+    estadoTarea(t, "recibido · " + tam(fin.tamano) + " · sha256 " + (fin.sha256 || "").slice(0, 12) + "…", "estado-ok");
+    t.fila.querySelector(".acc").innerHTML = "";
+    setTimeout(() => { t.fila.remove(); refrescar(); }, 4000);
+  }catch(err){
+    if(err.status === 401){ sesionCaducada(); return; }
+    estadoTarea(t, "error: " + err.message, "estado-err");
+    t.cancelada = true;
+    t.fila.querySelector(".acc").innerHTML = "";
+  }finally{
+    refrescar();
+  }
+}
+
+/* Reanudar: el navegador no guarda el archivo entre recargas, así que se vuelve a elegir. */
+let porReanudar = null;
+function pedirReanudar(envio){ porReanudar = envio; $("#reanudarArchivo").value = ""; $("#reanudarArchivo").click(); }
+$("#reanudarArchivo").onchange = e => {
+  const f = e.target.files[0]; const env = porReanudar; porReanudar = null;
+  if(!f || !env) return;
+  if(f.size !== env.tamano){ toast("Ese archivo no es el mismo: el tamaño no coincide"); return; }
+  nuevaTarea(f, env); bombear();
+};
+
+/* ------------------------------------------------------------ zona de arrastre */
+const zona = $("#zona");
+["dragenter","dragover"].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add("sobre"); }));
+["dragleave","drop"].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove("sobre"); }));
+zona.addEventListener("drop", e => encolar([...e.dataTransfer.files]));
+$("#elegir").onclick = () => $("#archivos").click();
+$("#archivos").onchange = e => { encolar([...e.target.files]); e.target.value = ""; };
+
+/* ------------------------------------------------------------ notas */
+$("#notaTexto").addEventListener("input", e => { $("#notaCont").textContent = e.target.value.length + " caracteres"; });
+$("#notaForm").onsubmit = async e => {
+  e.preventDefault();
+  const b = $("#notaBtn"); b.disabled = true;
+  try{
+    await api("api/buzon/notas", { method:"POST", body: JSON.stringify({ titulo: $("#notaTitulo").value, texto: $("#notaTexto").value }) });
+    $("#notaTitulo").value = ""; $("#notaTexto").value = ""; $("#notaCont").textContent = "0 caracteres";
+    toast("Nota guardada"); refrescar();
+  }catch(err){ if(err.status === 401) sesionCaducada(); else toast(err.message); }
+  b.disabled = false;
+};
+
+addEventListener("beforeunload", e => { if(cola.some(t => t.enCurso)){ e.preventDefault(); e.returnValue = ""; } });
+iniciar();
+</script>
+</body>
+</html>
