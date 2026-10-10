@@ -5,6 +5,9 @@ La seccion de cada version es el texto de su Release en GitHub (lo extrae `relea
 
 ## [Sin publicar]
 
+### Corregido
+- Los scripts de `scripts/*.sh` se guardaban en git sin permiso de ejecucion (venian de Windows) y fallaban con "Permission denied" al lanzarlos directamente en Omarchy.
+
 ## [2.0.0] - 2026-10-02
 
 ### Corregido
