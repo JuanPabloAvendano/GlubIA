@@ -7,6 +7,7 @@ La seccion de cada version es el texto de su Release en GitHub (lo extrae `relea
 
 ### Corregido
 - Los scripts de `scripts/*.sh` se guardaban en git sin permiso de ejecucion (venian de Windows) y fallaban con "Permission denied" al lanzarlos directamente en Omarchy.
+- La ultima linea de `.gitignore` (`_temporal_claude/`) se habia guardado en UTF-16 desde PowerShell: git veia el archivo como binario y la regla no se aplicaba. Reescrita en UTF-8.
 
 ## [2.0.0] - 2026-10-02
 
