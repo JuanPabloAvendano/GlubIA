@@ -102,6 +102,24 @@ túnel no hace falta nada de esto: `cloudflared` sale hacia Cloudflare y no abre
 Caddy solo confía en la IP fija de `cloudflared` (172.30.0.10) para saber la IP real del visitante,
 y GlubIA solo confía en Caddy (172.31.0.20): los límites por visitante no se pueden falsear.
 
+## Túneles rápidos sin cuenta (siempre encendidos)
+
+Si aún no tienes dominio, pon `COMPOSE_PROFILES=tunel-rapido` en `.env` y `docker compose up -d`.
+Se levantan `tunel-portafolio` (→ `web:8080`) y `tunel-ui` (→ `web:8081`) con URLs
+`*.trycloudflare.com`, y vuelven solos tras cada reinicio del equipo. La URL **cambia** cada vez
+que el contenedor se recrea: míralas con `scripts/vigilar.sh` (panel en vivo con servicios, modelo,
+memoria y enlaces) o `scripts/vigilar.sh --una-vez`.
+
+- La UI queda en internet protegida solo por `GLUBIA_PASS`: usa una contraseña larga.
+- No actives a la vez el perfil `tunel`: ambos usan la IP de confianza 172.30.0.10.
+- Recién creado, un enlace tarda ~1 minuto en resolver; el panel lo marca en amarillo.
+
+Para que el panel se abra al iniciar sesión, en `~/.config/hypr/autostart.lua`:
+
+```lua
+o.exec_on_start("omarchy-launch-or-focus-tui --app-id=org.glubia.vigilar /ruta/a/glubia/scripts/vigilar.sh")
+```
+
 ## Variantes
 
 | Equipo | En `.env` |

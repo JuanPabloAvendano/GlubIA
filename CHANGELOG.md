@@ -5,6 +5,10 @@ La seccion de cada version es el texto de su Release en GitHub (lo extrae `relea
 
 ## [Sin publicar]
 
+### Anadido
+- Perfil `tunel-rapido` en compose: tuneles trycloudflare al portafolio y a la UI que arrancan solos con el equipo, sin cuenta ni token.
+- `scripts/vigilar.sh`: panel en la terminal con estado de servicios, modelo, memoria y enlaces publicos.
+
 ## [2.0.0] - 2026-10-02
 
 ### Corregido

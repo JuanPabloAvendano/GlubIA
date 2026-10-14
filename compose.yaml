@@ -4,6 +4,8 @@
 #    cp .env.example .env        # y editalo
 #    docker compose up -d        # GlubIA + portafolio
 #    docker compose --profile tunel up -d    # + tunel Cloudflare con tu dominio
+#    COMPOSE_PROFILES=tunel-rapido en .env   # + tuneles rapidos sin cuenta (URL aleatoria)
+#    scripts/vigilar.sh                      # estado y enlaces en vivo
 #
 #  Topologia:
 #
@@ -103,6 +105,38 @@ services:
     networks:
       borde:
         ipv4_address: 172.30.0.10           # Caddy solo confia en esta IP para CF-Connecting-IP
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # Tuneles rapidos (trycloudflare.com): sin cuenta ni token, arrancan solos con
+  # el equipo. La URL cambia cada vez que el contenedor se recrea; la muestra
+  # scripts/vigilar.sh. No combinar con el perfil "tunel": comparten la IP .10.
+  tunel-portafolio:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunel-rapido"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://web:8080
+    depends_on:
+      - web
+    networks:
+      borde:
+        ipv4_address: 172.30.0.10           # misma IP de confianza que el tunel con dominio
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # UI privada: solo la protege GLUBIA_PASS (sin Cloudflare Access delante).
+  tunel-ui:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunel-rapido"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://web:8081
+    depends_on:
+      - web
+    networks:
+      borde:
+        ipv4_address: 172.30.0.11           # tambien de confianza en el Caddyfile
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
