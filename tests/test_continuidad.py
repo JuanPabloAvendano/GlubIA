@@ -160,40 +160,6 @@ def test_cola_llena_devuelve_503(servidor):
     assert r.status_code == 503 and r.headers["retry-after"] == "5"
 
 
-def test_lo_privado_pasa_antes_que_lo_publico(servidor, tmp_path):
-    perfil = tmp_path / "perfil.md"
-    perfil.write_text("# Juan\nHola.", encoding="utf-8")
-    url, app = servidor(GLUBIA_FALSO_RETARDO="0.02", GLUBIA_PUBLICO="1", GLUBIA_PERFIL=str(perfil),
-                        GLUBIA_PUBLICO_RPM="100", GLUBIA_PUBLICO_COLA="5")
-    orden = []
-    motor = app.state.glubia.motor
-    original = motor.backend.generar
-
-    def espia(mensajes, p, on_delta):
-        orden.append("publico" if "portafolio" in mensajes[0]["content"] else "privado")
-        return original(mensajes, p, on_delta)
-
-    motor.backend.generar = espia
-
-    async def prueba():
-        async with httpx.AsyncClient(timeout=30) as c:
-            async def pub():
-                r = await c.post(url + "/v1/public/ask", json={"message": "hola", "stream": False})
-                assert r.status_code == 200
-            async def priv():
-                r = await c.post(url + "/api/chat", json={"prompt": "hola", "max_new_tokens": 20})
-                assert r.status_code == 200
-            primero = asyncio.create_task(pub())       # ocupa el motor
-            await asyncio.sleep(0.1)
-            otros = [asyncio.create_task(pub()), asyncio.create_task(pub())]
-            await asyncio.sleep(0.1)
-            mio = asyncio.create_task(priv())          # llega despues, pero pasa antes
-            await asyncio.gather(primero, *otros, mio)
-
-    asyncio.run(prueba())
-    assert orden[:2] == ["publico", "privado"], orden
-
-
 def test_cancelar_en_cola_libera_la_plaza_al_momento(servidor):
     """Cancelar una pregunta que espera libera su plaza y cierra su stream ya."""
     url, app = servidor(GLUBIA_FALSO_RETARDO="0.05", GLUBIA_COLA="1")

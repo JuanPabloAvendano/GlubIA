@@ -1,0 +1,38 @@
+# ==========================================================================
+#  Caddy: unica puerta hacia GlubIA (tu UI + API v1).
+#
+#  :8081  GlubIA privado completo. Solo LAN/localhost, o por el tunel con
+#         Cloudflare Access delante.
+#
+#  HTTPS lo pone Cloudflare en el borde (tunel); dentro del equipo es http.
+#  El portafolio ya no vive aqui: es un repo aparte (~/Work/portafolio).
+# ==========================================================================
+{
+	admin off
+	auto_https off
+	servers {
+		# Solo cloudflared (IPs fijas en compose.yaml) puede decir quien es el
+		# visitante. Un equipo de la LAN que envie CF-Connecting-IP no cuela.
+		trusted_proxies static 172.30.0.10/32 172.30.0.11/32
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+(cabeceras) {
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+}
+
+:8081 {
+	import cabeceras
+	reverse_proxy glubia:11434 {
+		# Caddy SOBRESCRIBE X-Real-IP: GlubIA solo la acepta de esta IP
+		# (GLUBIA_PROXIES) para los limites de intentos de login.
+		header_up X-Real-IP {client_ip}
+		flush_interval -1
+	}
+}

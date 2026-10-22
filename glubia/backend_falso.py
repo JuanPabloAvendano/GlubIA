@@ -1,6 +1,6 @@
 """Backend simulado: responde sin modelo ni GPU.
 
-Sirve para las pruebas automaticas, para el CI y para desarrollar el portafolio
+Sirve para las pruebas automaticas, para el CI y para desarrollar la interfaz
 en cualquier equipo (GLUBIA_MOTOR=falso). Respeta la misma interfaz que el
 backend real, asi que la cola, la cancelacion y el recorte de contexto que se
 prueban con el son exactamente los mismos que en produccion.
@@ -18,7 +18,7 @@ from typing import List
 from .motor import Mensaje, Parametros, Resultado
 
 RELLENO = ("Esta es una respuesta de prueba del motor falso de GlubIA, util para "
-           "probar la interfaz, la API y el portafolio sin cargar el modelo. ")
+           "probar la interfaz y la API sin cargar el modelo. ")
 
 
 class BackendFalso:

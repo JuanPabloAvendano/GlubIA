@@ -84,5 +84,5 @@ jobs:
           cp .env.example .env && sed -i 's/^GLUBIA_PASS=.*/GLUBIA_PASS=ci/' .env
           docker compose config --quiet
           COMPOSE_FILE=compose.yaml:compose.cpu.yaml docker compose config --quiet
-          docker run --rm -v "$PWD/portafolio/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine \
+          docker run --rm -v "$PWD/despliegue/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine \
             caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile

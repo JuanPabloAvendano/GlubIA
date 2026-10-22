@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==========================================================================
 #  Panel de estado de GlubIA en la terminal: contenedores, modelo, memoria y
-#  enlaces publicos de los tuneles rapidos (cambian en cada reinicio).
+#  enlace del tunel rapido a la UI (cambia en cada reinicio).
 #
 #    scripts/vigilar.sh            # se refresca cada 10 s (Ctrl+C para salir)
 #    scripts/vigilar.sh --una-vez  # imprime una vez y termina
@@ -56,10 +56,9 @@ panel() {
 
   echo
   echo "${N}Enlaces${X}"
-  echo "  local portafolio   http://127.0.0.1:${PUERTO_PORTAFOLIO:-8080}"
   echo "  local UI           ${URL_PRIVADA}"
   local srv url c
-  for srv in tunel-portafolio tunel-ui; do
+  for srv in tunel-ui; do
     url="$(enlace "$srv")"
     if [ -z "$url" ]; then
       printf '  %-18s %s\n' "$srv" "${A}sin tunel${X}"

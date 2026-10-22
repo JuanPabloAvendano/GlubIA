@@ -2,21 +2,21 @@
 #  GlubIA en Omarchy (o cualquier Linux con Docker)
 #
 #    cp .env.example .env        # y editalo
-#    docker compose up -d        # GlubIA + portafolio
+#    docker compose up -d        # GlubIA (UI + API) detras de Caddy
 #    docker compose --profile tunel up -d    # + tunel Cloudflare con tu dominio
-#    COMPOSE_PROFILES=tunel-rapido en .env   # + tuneles rapidos sin cuenta (URL aleatoria)
+#    COMPOSE_PROFILES=tunel-rapido en .env   # + tunel rapido sin cuenta (URL aleatoria)
 #    scripts/vigilar.sh                      # estado y enlaces en vivo
 #
 #  Topologia:
 #
 #    internet ─▶ tunel (cloudflared) ─┐   red "borde"        red "interna" (sin salida)
-#    LAN/host ─▶ :8080 / :8081 ───────┴─▶ web (Caddy) ───────▶ glubia :11434
+#    LAN/host ─▶ :8081 ───────────────┴─▶ web (Caddy) ───────▶ glubia :11434
 #
 #  * glubia vive SOLO en una red interna sin acceso a internet: aunque
 #    quisiera, no puede enviar nada fuera. Solo Caddy llega a el.
-#  * :8080 = portafolio publico (estatico + /api/preguntar y /api/info).
 #  * :8081 = GlubIA privado (tu UI y la API completa). No lo publiques en
 #    el tunel sin Cloudflare Access delante (ver docs/OMARCHY.md).
+#  * El portafolio ya no vive aqui: es un repo aparte (~/Work/portafolio).
 #  * Los puertos se enlazan a 127.0.0.1 por defecto (WEB_BIND en .env).
 # ==========================================================================
 name: glubia
@@ -41,23 +41,15 @@ services:
       GLUBIA_MAX_TOKENS: ${GLUBIA_MAX_TOKENS:-4096}
       GLUBIA_MAX_SEG: ${GLUBIA_MAX_SEG:-300}
       GLUBIA_COLA: ${GLUBIA_COLA:-8}
-      GLUBIA_PUBLICO: ${GLUBIA_PUBLICO:-1}
-      GLUBIA_PUBLICO_TOKENS: ${GLUBIA_PUBLICO_TOKENS:-350}
-      GLUBIA_PUBLICO_RPM: ${GLUBIA_PUBLICO_RPM:-6}
-      GLUBIA_PUBLICO_DIA: ${GLUBIA_PUBLICO_DIA:-80}
-      GLUBIA_PUBLICO_COLA: ${GLUBIA_PUBLICO_COLA:-3}
-      GLUBIA_CORS: ${GLUBIA_CORS:-}
       GLUBIA_LOG: ${GLUBIA_LOG:-INFO}
       GLUBIA_DATA: /data
       GLUBIA_MODEL: /modelos/${GLUBIA_MODELO_DIR:-qwen2.5-coder-7b-int4-ov}
-      GLUBIA_PERFIL: /perfil/perfil.md
       GLUBIA_HOST: 0.0.0.0
       GLUBIA_PORT: "11434"
       GLUBIA_PROXIES: 172.31.0.20/32        # solo Caddy puede indicar la IP real del visitante
     volumes:
       - glubia-datos:/data                  # secreto, conversaciones, claves, cache de OpenVINO
       - ${GLUBIA_MODELOS:-./modelos}:/modelos:ro
-      - ./portafolio/perfil:/perfil:ro      # perfil.md: se relee en caliente al editarlo
     devices:
       - /dev/dri:/dev/dri                   # GPU Intel (compose.cpu.yaml lo quita)
     group_add:
@@ -77,11 +69,9 @@ services:
     depends_on:
       - glubia
     ports:
-      - "${WEB_BIND:-127.0.0.1}:${PUERTO_PORTAFOLIO:-8080}:8080"
       - "${WEB_BIND:-127.0.0.1}:${PUERTO_PRIVADO:-8081}:8081"
     volumes:
-      - ./portafolio/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./portafolio/sitio:/srv/portafolio:ro
+      - ./despliegue/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-datos:/data
       - caddy-config:/config
     networks:
@@ -109,23 +99,9 @@ services:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
 
-  # Tuneles rapidos (trycloudflare.com): sin cuenta ni token, arrancan solos con
-  # el equipo. La URL cambia cada vez que el contenedor se recrea; la muestra
-  # scripts/vigilar.sh. No combinar con el perfil "tunel": comparten la IP .10.
-  tunel-portafolio:
-    image: cloudflare/cloudflared:latest
-    profiles: ["tunel-rapido"]
-    restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://web:8080
-    depends_on:
-      - web
-    networks:
-      borde:
-        ipv4_address: 172.30.0.10           # misma IP de confianza que el tunel con dominio
-    logging:
-      driver: json-file
-      options: { max-size: "10m", max-file: "3" }
-
+  # Tunel rapido (trycloudflare.com): sin cuenta ni token, arranca solo con el
+  # equipo. La URL cambia cada vez que el contenedor se recrea; la muestra
+  # scripts/vigilar.sh.
   # UI privada: solo la protege GLUBIA_PASS (sin Cloudflare Access delante).
   tunel-ui:
     image: cloudflare/cloudflared:latest

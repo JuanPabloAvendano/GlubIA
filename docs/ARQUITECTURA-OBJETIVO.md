@@ -2,6 +2,10 @@
 
 > Documento de traspaso para otro chat, modelo o desarrollador. Léelo completo antes de proponer
 > cambios. Fecha: 2 oct 2026. Versión del producto al escribirlo: 2.0.0.
+>
+> **Actualización 21 oct 2026:** el portafolio salió de GlubIA (decisión 7, sección 9). Donde este
+> documento habla del segmento `portafolio`, del endpoint `/v1/public/*` o de `perfil.py`, se refiere a
+> lo que había antes de esa fecha.
 
 ## 1. Rol y drivers
 
@@ -30,12 +34,11 @@ Mapa del código actual:
 | Motor | `glubia/motor.py` | un hilo dueño del pipeline, cola con prioridades, cancelación por token, recorte de contexto por tokens |
 | Backends | `glubia/backend_openvino.py`, `backend_falso.py` | generación real / simulada (pruebas) |
 | API UI | `glubia/api_ui.py` | `/api/*` (sesión por cookie), conversaciones en SQLite |
-| API v1 | `glubia/api_v1.py` | `/v1/models`, `/v1/chat/completions` (claves), `/v1/public/*` (portafolio) |
+| API v1 | `glubia/api_v1.py` | `/v1/models`, `/v1/chat/completions` (claves) |
 | Seguridad | `glubia/seguridad.py` | sesiones HMAC, claves hasheadas, IP real, limitador acotado |
-| Persona | `glubia/perfil.py` + `portafolio/perfil/perfil.md` | el único "segmento" que existe, cableado a mano |
-| Despliegue | `Dockerfile`, `compose*.yaml`, `portafolio/Caddyfile`, `scripts/` | contenedor, Caddy, túnel Cloudflare, desplegar con rollback |
+| Despliegue | `Dockerfile`, `compose*.yaml`, `despliegue/Caddyfile`, `scripts/` | contenedor, Caddy, túnel Cloudflare, desplegar con rollback |
 | Pipeline | `github-ci/` (va a `.github/`), `scripts/evaluar.py` | CI con motor falso + OpenVINO real, release a GHCR, evaluación de modelos |
-| Docs | `docs/PROBLEMAS.md`, `PIPELINE.md`, `API.md`, `OMARCHY.md`, `PORTAFOLIO.md` | detalle |
+| Docs | `docs/PROBLEMAS.md`, `PIPELINE.md`, `API.md`, `OMARCHY.md` | detalle |
 
 Estado real: 51 pruebas pasan (Python 3.12–3.14, incluidas pruebas con OpenVINO real). **Nunca se ha
 ejecutado** en el equipo de Juan con la 2.0, ni se ha construido la imagen Docker, ni se ha
@@ -224,6 +227,14 @@ Se revisa cuando la fase 5 lo pida.
 4. **Despliegue pull** (el nodo tira de releases) en vez de runners en casa. Vigente.
 5. **Segmentos como configuración, no código** — driver de velocidad. Nueva, pendiente de fase 2.
 6. **Puertos y adaptadores** para inferencia y almacenamiento — driver de flexibilidad. Nueva.
+7. **El portafolio fuera de GlubIA** (21 oct 2026). GlubIA nació como ayuda personal y asistente
+   local. Servir a visitantes desde el portátil lo ataba a estar encendido y abría una superficie
+   pública (prompt injection) en el mismo proceso que lo privado. Decisión: el portafolio pasa a su
+   propio repo, y su chat a un espacio en la nube con información definida (proveedor por decidir).
+   Se retiran `perfil.py`, `/v1/public/*`, `GLUBIA_PUBLICO*`/`GLUBIA_CORS` y el puerto 8080.
+   Alternativa descartada: mantener el endpoint público hasta tener la nube (el chat del portafolio
+   queda apagado mientras tanto). Consecuencia: GlubIA no tiene rutas públicas y queda libre para
+   otro uso. Vigente.
 
 ## 10. Preguntas abiertas para el Product Owner
 

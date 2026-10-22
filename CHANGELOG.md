@@ -5,8 +5,15 @@ La seccion de cada version es el texto de su Release en GitHub (lo extrae `relea
 
 ## [Sin publicar]
 
+### Eliminado
+- El portafolio sale de GlubIA a su propio repo: la pagina, `perfil.md`, `glubia/perfil.py`, el endpoint `/v1/public/*`, las variables `GLUBIA_PUBLICO*`, `GLUBIA_PERFIL` y `GLUBIA_CORS`, el puerto 8080, el tunel `tunel-portafolio` y `scripts/vista_portafolio.py`. GlubIA queda como asistente personal y local.
+
+### Cambiado
+- El Caddyfile pasa a `despliegue/Caddyfile` y solo sirve GlubIA privado (`:8081`).
+- `scripts/evaluar.py` evalua solo la API privada; los casos del portafolio se fueron con el.
+
 ### Anadido
-- Perfil `tunel-rapido` en compose: tuneles trycloudflare al portafolio y a la UI que arrancan solos con el equipo, sin cuenta ni token.
+- Perfil `tunel-rapido` en compose: tunel trycloudflare a la UI que arranca solo con el equipo, sin cuenta ni token.
 - `scripts/vigilar.sh`: panel en la terminal con estado de servicios, modelo, memoria y enlaces publicos.
 
 ## [2.0.0] - 2026-10-02

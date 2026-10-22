@@ -31,8 +31,7 @@ from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
 log = logging.getLogger("glubia.motor")
 
-PRIORIDAD_PRIVADA = 0   # tu UI y tus claves de API pasan primero
-PRIORIDAD_PUBLICA = 1   # visitantes del portafolio
+PRIORIDAD_PRIVADA = 0   # tu UI y tus claves de API
 
 
 class Ocupado(Exception):
@@ -120,7 +119,7 @@ class Motor:
         self._cola: queue.PriorityQueue = queue.PriorityQueue()
         self._seq = itertools.count()
         self._lock = threading.Lock()
-        self._esperando = {PRIORIDAD_PRIVADA: 0, PRIORIDAD_PUBLICA: 0}
+        self._esperando = {PRIORIDAD_PRIVADA: 0}
         self._activos: Dict[str, Trabajo] = {}
         self._hilo = threading.Thread(target=self._bucle, name="glubia-motor", daemon=True)
         self.salir_si_falla = True
@@ -145,10 +144,6 @@ class Motor:
         with self._lock:
             return sum(self._esperando.values())
 
-    def en_cola_de(self, prioridad: int) -> int:
-        with self._lock:
-            return self._esperando[prioridad]
-
     # ------------------------------------------------------------ API publica
 
     def enviar(self, mensajes: List[Mensaje], params: Parametros,
@@ -162,8 +157,6 @@ class Motor:
             total = sum(self._esperando.values())
             if total >= self.cfg.cola_max:
                 raise Ocupado(f"hay {total} peticiones esperando")
-            if prioridad == PRIORIDAD_PUBLICA and self._esperando[PRIORIDAD_PUBLICA] >= self.cfg.publico_cola:
-                raise Ocupado("demasiadas preguntas publicas en espera")
             delante = sum(n for p, n in self._esperando.items() if p <= prioridad)
             delante += 1 if self.actual is not None else 0
             self._esperando[prioridad] += 1

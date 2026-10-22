@@ -8,8 +8,7 @@ resultado en evaluaciones/ y lo compara con la ultima ejecucion: si empeora la t
 de aciertos o la velocidad cae mas de un 20 %, sale con codigo 1.
 
     GLUBIA_API_KEY=glb_... python3 scripts/evaluar.py
-    python3 scripts/evaluar.py --privada http://127.0.0.1:8081 --publica http://127.0.0.1:8080
-    python3 scripts/evaluar.py --solo publica
+    python3 scripts/evaluar.py --privada http://127.0.0.1:8081
 
 Solo usa la biblioteca estandar: corre con cualquier python3 >= 3.8.
 """
@@ -65,9 +64,7 @@ def comprobar(texto: str, reglas: dict) -> list:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--privada", default=os.environ.get("URL_PRIVADA", "http://127.0.0.1:8081"))
-    ap.add_argument("--publica", default=os.environ.get("URL_PUBLICA", "http://127.0.0.1:8080"))
     ap.add_argument("--clave", default=os.environ.get("GLUBIA_API_KEY", ""))
-    ap.add_argument("--solo", choices=["privada", "publica"])
     ap.add_argument("--casos", default=str(RAIZ / "scripts" / "eval_casos.json"))
     ap.add_argument("--salida", default=str(RAIZ / "evaluaciones"))
     args = ap.parse_args()
@@ -78,25 +75,20 @@ def main() -> int:
     except (urllib.error.URLError, OSError):
         estado = {"model": "?", "device": "?"}
 
+    if not args.clave:
+        print("Falta GLUBIA_API_KEY (o --clave).")
+        return 1
+
     resultados = []
     for caso in casos:
         tipo = caso["tipo"]
-        if args.solo and tipo != args.solo:
-            continue
-        if tipo == "privada" and not args.clave:
-            print(f"  -     {caso['id']}: sin GLUBIA_API_KEY, se omite")
-            continue
         t0 = time.monotonic()
         try:
-            if tipo == "privada":
-                r = _post(args.privada + "/v1/chat/completions",
-                          {"messages": [{"role": "user", "content": caso["pregunta"]}],
-                           "max_tokens": caso.get("max_tokens", 512), "temperature": 0}, args.clave)
-                texto = r["choices"][0]["message"]["content"]
-                tokens = r["usage"]["completion_tokens"]
-            else:
-                r = _post(args.publica + "/api/preguntar", {"message": caso["pregunta"], "stream": False})
-                texto, tokens = r["answer"], None
+            r = _post(args.privada + "/v1/chat/completions",
+                      {"messages": [{"role": "user", "content": caso["pregunta"]}],
+                       "max_tokens": caso.get("max_tokens", 512), "temperature": 0}, args.clave)
+            texto = r["choices"][0]["message"]["content"]
+            tokens = r["usage"]["completion_tokens"]
             error = None
         except Exception as exc:  # noqa: BLE001
             texto, tokens, error = "", None, str(exc)

@@ -1,8 +1,11 @@
-# GlubIA 2.0 — IA local, API y portafolio
+# GlubIA 2.0 — IA local y API
 
 Un modelo de lenguaje en tu propio equipo (Qwen2.5-Coder-7B sobre OpenVINO, GPU Intel o CPU), con
-interfaz web propia, una API compatible con la de OpenAI y un asistente público para tu portafolio.
-Nada sale de tu máquina salvo lo que tú publiques.
+interfaz web propia y una API compatible con la de OpenAI. Es un asistente personal y local: nada sale
+de tu máquina salvo lo que tú publiques.
+
+El portafolio ya no vive aquí: es un repo aparte (`~/Work/portafolio`), con su propio chat en la nube
+aún por decidir. GlubIA no le sirve nada.
 
 ```
 GlubIA/
@@ -10,15 +13,15 @@ GlubIA/
 │   ├── motor.py            cola, cancelación y presupuesto de contexto
 │   ├── backend_openvino.py el modelo real   · backend_falso.py  uno simulado para pruebas
 │   ├── api_ui.py           rutas de la interfaz (compatibles con la v1)
-│   ├── api_v1.py           API OpenAI-compatible + endpoint público
-│   └── ...                 config, seguridad, conversaciones, perfil, telemetría
+│   ├── api_v1.py           API OpenAI-compatible
+│   └── ...                 config, seguridad, conversaciones, telemetría
 ├── glubia_server.py        lanzador (lo usan iniciar.bat / iniciar.sh)
 ├── ui.html                 la interfaz web
-├── portafolio/             página, perfil.md de la persona y Caddyfile
+├── despliegue/Caddyfile    la única puerta hacia GlubIA en el contenedor
 ├── Dockerfile, compose*.yaml, .env.example     contenedor para Omarchy
-├── scripts/                instalar, desplegar, humo, descargar modelo, evaluar, vista previa
+├── scripts/                instalar, desplegar, humo, descargar modelo, evaluar, vigilar
 ├── tests/                  pruebas (motor falso y OpenVINO real)
-├── docs/                   requisitos, arquitectura, pipeline, API, Omarchy, portafolio
+├── docs/                   requisitos, arquitectura, pipeline, API, Omarchy
 │   └── historia/           documentos y servidor de la etapa anterior
 ├── modelo_qwen_7b_ov/      el modelo (no va al repositorio)
 └── datos/                  se crea solo: sesiones, conversaciones, claves, caché de OpenVINO
@@ -39,7 +42,7 @@ OpenVINO.
 
 **Omarchy / Linux con Docker:** `scripts/instalar-omarchy.sh` (detalle en `docs/OMARCHY.md`).
 
-**Sin modelo, para probar la UI, la API o el portafolio:** `GLUBIA_MOTOR=falso`.
+**Sin modelo, para probar la UI o la API:** `GLUBIA_MOTOR=falso`.
 
 ## Qué cambió en la 2.0
 
@@ -76,10 +79,6 @@ El diagnóstico completo, con cómo se reprodujo cada fallo, está en `docs/PROB
 | `GLUBIA_CONVERSACIONES` | `1` | historial sincronizado en el servidor |
 | `GLUBIA_API_KEYS` | vacío | claves de API directas, separadas por comas |
 | `GLUBIA_PROXIES` | vacío | IPs/redes de proxies de confianza (el compose pone la de Caddy) |
-| `GLUBIA_PUBLICO` | `0` | `1` activa el asistente del portafolio |
-| `GLUBIA_PERFIL` | `./portafolio/perfil/perfil.md` | persona del asistente público |
-| `GLUBIA_PUBLICO_TOKENS` · `_RPM` · `_DIA` · `_COLA` · `_SEG` · `_MAX_CHARS` · `_HISTORIAL` | 350 · 6 · 80 · 3 · 90 · 600 · 6 | límites del asistente público |
-| `GLUBIA_CORS` | vacío | orígenes que pueden llamar al asistente público desde otro dominio |
 | `GLUBIA_DOCS` | `1` | documentación interactiva en `/api/docs` |
 | `GLUBIA_TELEMETRIA_OV` | `0` | `1` deja la telemetría de OpenVINO como esté |
 
@@ -90,8 +89,7 @@ El diagnóstico completo, con cómo se reprodujo cada fallo, está en `docs/PROB
 - Claves de API guardadas solo como hash (`python -m glubia.claves`).
 - La IP real solo se acepta de quien corresponde: `CF-Connecting-IP` desde loopback (túnel en la misma
   máquina) o `X-Real-IP` desde `GLUBIA_PROXIES` (Caddy). Nadie en la LAN puede falsearla.
-- El asistente público no puede cambiar su persona, tiene límites por IP y va detrás de tus
-  peticiones. Sus logs guardan la IP recortada, nunca las preguntas.
+- Sin rutas públicas: todo salvo `/healthz` y `/readyz` exige sesión o clave.
 - En el contenedor, GlubIA vive en una red interna sin salida a internet.
 
 ## Detalles técnicos que no hay que redescubrir
@@ -120,4 +118,3 @@ El diagnóstico completo, con cómo se reprodujo cada fallo, está en `docs/PROB
 - `docs/PIPELINE.md` — de una rama a producción, versiones, modelos y vuelta atrás.
 - `docs/API.md` — referencia y ejemplos.
 - `docs/OMARCHY.md` — despliegue, firewall, dominio y túnel.
-- `docs/PORTAFOLIO.md` — qué está listo, qué falta y opciones local/nube.

@@ -23,4 +23,3 @@ markers = ["openvino: necesita openvino_genai y un modelo en GLUBIA_TEST_MODELO"
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.ruff.lint.per-file-ignores]
-"glubia/perfil.py" = ["E501"]   # el prompt de la persona es prosa: mejor sin cortar

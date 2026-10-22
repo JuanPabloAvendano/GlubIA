@@ -25,8 +25,6 @@ def _banner(cfg, estado) -> None:
             print("\n  Acceso protegido con la contrasena de GLUBIA_PASS.")
     else:
         print("\n  AUTENTICACION DESACTIVADA (GLUBIA_AUTH=0). No lo expongas por tunel.")
-    if cfg.publico:
-        print(f"  Asistente publico ACTIVO (perfil: {cfg.perfil_path})")
     print(f"{linea}\n", flush=True)
 
 

@@ -125,7 +125,8 @@ def test_conversaciones_desactivables(fabricar):
 
 
 def test_cuerpo_gigante_rechazado(cliente):
-    r = cliente.post("/v1/public/ask", content=b"x" * 40000, headers={"Content-Type": "application/json"})
+    r = cliente.post("/v1/chat/completions", content=b"x" * (16 * 1024 * 1024 + 1),
+                     headers={"Content-Type": "application/json"})
     assert r.status_code == 413
 
 

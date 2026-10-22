@@ -91,19 +91,6 @@ class Config:
     api_keys_env: Tuple[str, ...]
     conversaciones: bool
     docs: bool
-    # Endpoint publico (portafolio)
-    publico: bool
-    perfil_path: Path
-    publico_nombre: str
-    publico_tokens: int
-    publico_temp: float
-    publico_rpm: int
-    publico_dia: int
-    publico_cola: int
-    publico_seg: int
-    publico_max_chars: int
-    publico_historial: int
-    cors: Tuple[str, ...]
     # Varios
     telemetria_ov: bool
     log_nivel: str
@@ -144,18 +131,6 @@ def cargar_config() -> Config:
         api_keys_env=_lista("GLUBIA_API_KEYS"),
         conversaciones=_bool("GLUBIA_CONVERSACIONES", True),
         docs=_bool("GLUBIA_DOCS", True),
-        publico=_bool("GLUBIA_PUBLICO", False),
-        perfil_path=_ruta("GLUBIA_PERFIL", BASE_DIR / "portafolio" / "perfil" / "perfil.md"),
-        publico_nombre=_texto("GLUBIA_PUBLICO_NOMBRE"),
-        publico_tokens=_entero("GLUBIA_PUBLICO_TOKENS", 350, 32, 2048),
-        publico_temp=_decimal("GLUBIA_PUBLICO_TEMP", 0.3, 0.0, 1.5),
-        publico_rpm=_entero("GLUBIA_PUBLICO_RPM", 6, 1, 600),
-        publico_dia=_entero("GLUBIA_PUBLICO_DIA", 80, 1, 100000),
-        publico_cola=_entero("GLUBIA_PUBLICO_COLA", 3, 1, 100),
-        publico_seg=_entero("GLUBIA_PUBLICO_SEG", 90, 10, 600),
-        publico_max_chars=_entero("GLUBIA_PUBLICO_MAX_CHARS", 600, 50, 4000),
-        publico_historial=_entero("GLUBIA_PUBLICO_HISTORIAL", 6, 0, 20),
-        cors=_lista("GLUBIA_CORS"),
         telemetria_ov=_bool("GLUBIA_TELEMETRIA_OV", False),
         log_nivel=_texto("GLUBIA_LOG", "INFO").upper(),
         falso_retardo=_decimal("GLUBIA_FALSO_RETARDO", 0.02, 0.0, 5.0),

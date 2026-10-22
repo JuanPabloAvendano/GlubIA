@@ -4,11 +4,16 @@ Product Owner: Juan Pablo Avendaño Duque. Fecha: 2 oct 2026.
 Estado de cada requisito frente a la versión 2.0: **Cumple**, **Parcial**, **Pendiente**.
 Los marcados *Por validar* esperan la aprobación del PO antes de implementarse.
 
-## Objetivo inmediato (2 semanas)
+> **21 oct 2026: el portafolio se independiza.** GlubIA nació como ayuda personal y asistente local, y
+> vuelve a ser solo eso. El portafolio (página, perfil y chat) pasa a su propio repo
+> (`~/Work/portafolio`). Su chat tendrá un espacio propio en la nube, con información definida, y
+> el servicio que lo responda aún no está decidido (ver `docs/CHAT-NUBE.md` en ese repo). RF-03 y
+> RF-04 se trasladan allí; a GlubIA se le dará otro uso, por definir.
 
-Un portafolio personal completo en un dominio propio: página estática (Cloudflare Pages) con un chat
-de IA que responde sobre Juan y algunos de sus proyectos, servido por GlubIA corriendo en Omarchy en
-su propio portátil.
+## Objetivo inmediato
+
+Por redefinir tras la separación del portafolio. El objetivo anterior (portafolio servido por
+GlubIA desde el portátil) queda descartado.
 
 ## Requisitos funcionales
 
@@ -19,7 +24,7 @@ del equipo:
 
 | Estado del equipo | Comportamiento de GlubIA |
 |---|---|
-| Arrancado en **Windows** | Desconectado. El chat del portafolio muestra "dormida" y ofrece contacto. |
+| Arrancado en **Windows** | Desconectado. |
 | **Apagado** (noches, cuidado de batería) | Desconectado, igual que arriba. |
 | **Omarchy en uso** (Juan trabajando) | Sirve con **recursos limitados**: el trabajo de Juan tiene prioridad. |
 | **Omarchy inactivo** (pantalla apagada, sin uso) | Sirve con **todos los recursos** disponibles. |
@@ -30,12 +35,10 @@ Criterios de aceptación:
    corriente.
 2. Al detectar inactividad, GlubIA pasa a recursos completos; al volver Juan, a limitados, en menos
    de 5 s y sin cortar respuestas en curso.
-3. Al arrancar Omarchy, GlubIA arranca solo; al pasar a Windows o apagar, el portafolio sigue
-   visible y el chat informa que la IA no está disponible.
+3. Al arrancar Omarchy, GlubIA arranca solo.
 4. El cambio de modo queda en el registro (hora y modo).
 
-Estado: **Parcial.** Hecho: arranque automático con Docker, página que funciona con la IA apagada
-(estado "dormida"), límite fijo de memoria. Falta: configuración de inactividad sin suspensión y el
+Estado: **Parcial.** Hecho: arranque automático con Docker, límite fijo de memoria. Falta: configuración de inactividad sin suspensión y el
 cambio dinámico de recursos (propuesta: ganchos de `hypridle` que ajustan CPU y prioridad del
 contenedor con `docker update`).
 
@@ -56,7 +59,7 @@ PyTorch se usa solo para preparar o exportar modelos.
 
 Estado: **Pendiente.** Hoy la generación usa GPU con caída a CPU; el NPU no se usa.
 
-### RF-03 Control total de la información *(Por validar)*
+### RF-03 Control total de la información *(trasladado al repo `portafolio`)*
 
 1. La IA solo sabe lo que Juan pone explícitamente: su perfil y la documentación de proyectos que
    elija (repositorios públicos de GitHub).
@@ -66,18 +69,17 @@ Estado: **Pendiente.** Hoy la generación usa GPU con caída a CPU; el NPU no se
    los visitantes no se guardan.
 4. Juan añade o quita información editando archivos; el cambio se aplica sin reiniciar.
 
-Estado: **Cumple** para el perfil (`perfil.md`, recarga en caliente, comentarios no visibles para el
-modelo, preguntas no guardadas, IP anonimizada en logs). **Pendiente** la documentación de proyectos
-(depende de RF-05).
+Estado: **Trasladado.** Lo cumplía el endpoint público de GlubIA, ya retirado; el servicio en la nube
+del portafolio debe volver a cumplirlo.
 
-### RF-04 Portafolio con chat sobre Juan
+### RF-04 Portafolio con chat sobre Juan *(trasladado al repo `portafolio`)*
 
 1. Página estática en el dominio propio, con CV y chat.
 2. El chat responde solo sobre Juan y sus proyectos, con límites por visitante.
 3. La página funciona aunque la IA esté apagada.
 
-Estado: **Parcial.** Hecho: página, chat, estados, límites y persona fija. Falta: contenido real,
-dominio, despliegue en Cloudflare Pages + túnel, y el CV generado desde la misma fuente que el perfil.
+Estado: **Trasladado.** La página y el cliente del chat están en el repo `portafolio`; el servicio
+que responde está por decidir.
 
 ### RF-05 Consulta de documentación extensa (RAG) — fuera de alcance por ahora
 
@@ -101,11 +103,8 @@ Falta: crear el repositorio y la primera ejecución del CI.
   para generar respuestas.
 - **RT-02 Hardware:** Intel Core Ultra 5 115U (GPU integrada + NPU), 16 GB LPDDR5 compartidos entre
   sistema, GPU y modelo; ~300 GB de disco en Omarchy. El modelo elegido debe dejar memoria para el
-  trabajo diario (objetivo: ≤ 4 GB para el modelo del portafolio).
-- **RT-03 Crecimiento del portafolio:** se espera un aumento continuo de funcionalidades
-  (documentos descargables por CDN, audios con la voz de Juan, videos de YouTube propios, más
-  segmentos). Añadir un tipo de contenido debe ser añadir datos, no rediseñar; la página debe seguir
-  siendo estática y el contenido pesado vivir en un CDN o servicio externo.
+  trabajo diario (objetivo: ≤ 4 GB para el modelo).
+- **RT-03 Crecimiento del portafolio:** trasladada al repo `portafolio`.
 - **RT-04 Escalabilidad y flexibilidad** son los drivers de arquitectura (ver
   `ARQUITECTURA-OBJETIVO.md`).
 - **RT-05 Salud del equipo:** no se exige disponibilidad 24/7; la disponibilidad objetivo es
@@ -118,7 +117,7 @@ Falta: crear el repositorio y la primera ejecución del CI.
 |---|---|
 | RF-01 Modos de disponibilidad | Parcial · por validar |
 | RF-02 Uso del NPU | Pendiente · por validar |
-| RF-03 Control de la información | Cumple (perfil) · por validar |
-| RF-04 Portafolio con chat | Parcial |
+| RF-03 Control de la información | Trasladado al portafolio |
+| RF-04 Portafolio con chat | Trasladado al portafolio |
 | RF-05 RAG | Fuera de alcance |
 | RF-06 Trabajo desde Windows y Omarchy | Parcial |

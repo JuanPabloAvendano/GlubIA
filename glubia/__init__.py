@@ -8,9 +8,8 @@ El paquete se organiza asi:
     backend_openvino.py / backend_falso.py   quien genera de verdad
     seguridad.py       sesiones, claves de API, limites por IP
     conversaciones.py  historial en SQLite (sincroniza la UI entre equipos)
-    perfil.py          persona del portafolio para el endpoint publico
     api_ui.py          rutas de la interfaz (compatibles con la version 1)
-    api_v1.py          API OpenAI-compatible + endpoint publico
+    api_v1.py          API OpenAI-compatible
     app.py             ensambla la aplicacion FastAPI
 """
 

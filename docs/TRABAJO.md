@@ -37,7 +37,7 @@ $env:GLUBIA_MOTOR="falso"; .\openvino_env\Scripts\python.exe glubia_server.py
 ```bash
 cd ~/glubia
 git pull
-# desarrollo en otro puerto, sin tocar el servicio publicado (8080/8081)
+# desarrollo en otro puerto, sin tocar el servicio publicado (8081)
 GLUBIA_MOTOR=falso GLUBIA_PORT=11500 GLUBIA_DATA=./datos-dev python -m glubia
 scripts/verificar.sh
 # publicar lo que ya está en una versión

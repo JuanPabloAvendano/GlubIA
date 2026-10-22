@@ -10,7 +10,6 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.middleware.cors import CORSMiddleware
 
 from . import __version__
 from .api_ui import router as router_ui
@@ -19,7 +18,6 @@ from .api_v1 import router as router_v1
 from .config import Config, cargar_config
 from .conversaciones import Conversaciones
 from .motor import Motor, NoListo, Ocupado
-from .perfil import Perfil
 from .seguridad import COOKIE, Claves, Limitador, Sesiones, cargar_secreto, ip_cliente
 
 log = logging.getLogger("glubia")
@@ -46,8 +44,6 @@ class Estado:
                 self.conversaciones = Conversaciones(cfg.data_dir / "glubia.db")
             except Exception as exc:  # noqa: BLE001
                 log.warning("conversaciones en servidor desactivadas: %s", exc)
-        self.perfil = Perfil(cfg.perfil_path, cfg.publico_nombre)
-        self.limites = Limitador()
         self.fallos = Limitador()
 
         if fabrica is None:
@@ -93,20 +89,16 @@ async def _responder_json(send, status: int, mensaje: str) -> None:
 
 
 class LimiteCuerpo:
-    """Corta cuerpos enormes ANTES de que FastAPI los lea en memoria.
+    """Corta cuerpos enormes ANTES de que FastAPI los lea en memoria (16 MB: conversaciones largas)."""
 
-    El endpoint publico admite 32 KB; el resto, 16 MB (conversaciones largas).
-    """
-
-    def __init__(self, app, publico: int = 32 * 1024, general: int = 16 * 1024 * 1024):
+    def __init__(self, app, limite: int = 16 * 1024 * 1024):
         self.app = app
-        self.publico = publico
-        self.general = general
+        self.limite = limite
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http" or scope["method"] in ("GET", "HEAD", "OPTIONS", "DELETE"):
             return await self.app(scope, receive, send)
-        limite = self.publico if scope["path"].startswith("/v1/public") else self.general
+        limite = self.limite
         cabeceras = dict(scope.get("headers") or [])
         declarado = cabeceras.get(b"content-length")
         if declarado is not None:
@@ -139,21 +131,6 @@ class LimiteCuerpo:
         return await self.app(scope, receive_repetido, send)
 
 
-class CorsPublico:
-    """CORS solo para /v1/public/* y solo para los origenes de GLUBIA_CORS."""
-
-    def __init__(self, app, origenes):
-        self.app = app
-        self.origenes = list(origenes)
-        self.cors = CORSMiddleware(app, allow_origins=self.origenes, allow_methods=["GET", "POST"],
-                                   allow_headers=["Content-Type"], max_age=600)
-
-    async def __call__(self, scope, receive, send):
-        if self.origenes and scope["type"] == "http" and scope["path"].startswith("/v1/public"):
-            return await self.cors(scope, receive, send)
-        return await self.app(scope, receive, send)
-
-
 # --------------------------------------------------------------------------
 
 def configurar_logs(nivel: str) -> None:
@@ -179,18 +156,14 @@ def crear_app(cfg: Optional[Config] = None, fabrica=None, salir_si_falla: bool =
     )
     app.state.glubia = estado
 
-    publico = lambda request: request.url.path.startswith("/v1/public")  # noqa: E731
-
     @app.exception_handler(Ocupado)
     async def _ocupado(request: Request, exc: Ocupado):
-        texto = ("Hay muchas preguntas en espera. Inténtalo de nuevo en unos segundos." if publico(request)
-                 else "GlubIA está ocupada respondiendo otras preguntas. Reintenta en unos segundos.")
+        texto = "GlubIA está ocupada respondiendo otras preguntas. Reintenta en unos segundos."
         return respuesta_error(request, 503, texto, "server_error", "busy", headers={"Retry-After": "5"})
 
     @app.exception_handler(NoListo)
     async def _no_listo(request: Request, exc: NoListo):
-        texto = ("La IA se está despertando. Prueba en un minuto." if publico(request)
-                 else f"El modelo aún no está listo ({exc}). Reintenta en unos segundos.")
+        texto = f"El modelo aún no está listo ({exc}). Reintenta en unos segundos."
         return respuesta_error(request, 503, texto, "server_error", "model_loading", headers={"Retry-After": "10"})
 
     @app.exception_handler(StarletteHTTPException)
@@ -202,8 +175,6 @@ def crear_app(cfg: Optional[Config] = None, fabrica=None, salir_si_falla: bool =
 
     @app.exception_handler(RequestValidationError)
     async def _validacion(request: Request, exc: RequestValidationError):
-        if request.url.path.startswith("/v1/public"):
-            return respuesta_error(request, 422, "La pregunta no tiene un formato válido.")
         if request.url.path.startswith("/v1/"):
             primero = exc.errors()[0] if exc.errors() else {}
             campo = ".".join(str(x) for x in primero.get("loc", []) if x != "body")
@@ -227,6 +198,5 @@ def crear_app(cfg: Optional[Config] = None, fabrica=None, salir_si_falla: bool =
     app.include_router(router_v1)
 
     # El ultimo en anadirse es el mas externo.
-    app.add_middleware(CorsPublico, origenes=cfg.cors)
     app.add_middleware(LimiteCuerpo)
     return app

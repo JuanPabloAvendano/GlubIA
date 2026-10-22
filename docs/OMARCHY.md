@@ -1,6 +1,6 @@
 # GlubIA en Omarchy
 
-Guía para dejar GlubIA y el portafolio corriendo en Omarchy (Arch Linux + Hyprland) con Docker.
+Guía para dejar GlubIA corriendo en Omarchy (Arch Linux + Hyprland) con Docker.
 Sirve igual para cualquier Linux con Docker.
 
 ## Requisitos del equipo
@@ -41,13 +41,13 @@ sudo usermod -aG docker "$USER"      # y cierra sesión
 
 ```
 internet ─▶ tunel (cloudflared) ─┐   red "borde"          red "interna" (sin salida)
-LAN/host ─▶ :8080 / :8081 ───────┴─▶ web (Caddy) ─────────▶ glubia :11434
+LAN/host ─▶ :8081 ───────────────┴─▶ web (Caddy) ─────────▶ glubia :11434
 ```
 
 | Servicio | Qué es | Puerto en el equipo |
 |---|---|---|
 | `glubia` | el modelo, la UI y la API | ninguno: solo lo alcanza Caddy |
-| `web` | portafolio (`:8080`) y GlubIA privado (`:8081`) | `127.0.0.1` por defecto |
+| `web` | Caddy delante de GlubIA privado (`:8081`) | `127.0.0.1` por defecto |
 | `tunel` | Cloudflare Tunnel (perfil opcional) | ninguno: conexión saliente |
 
 - `glubia` no tiene salida a internet: aunque algo quisiera enviar datos fuera, no puede.
@@ -74,7 +74,6 @@ expuestos por accidente. Para abrir solo a tu red local:
 WEB_BIND=0.0.0.0
 
 docker compose up -d
-sudo ufw route allow proto tcp from 192.168.1.0/24 to any port 8080   # portafolio
 sudo ufw route allow proto tcp from 192.168.1.0/24 to any port 8081   # GlubIA privado
 ```
 
@@ -87,13 +86,8 @@ túnel no hace falta nada de esto: `cloudflared` sale hacia Cloudflare y no abre
    basta).
 2. Cloudflare → Zero Trust → Redes → Túneles → **Crear túnel** (tipo cloudflared), nómbralo
    `glubia` y elige Docker. Copia el token y ponlo en `.env` como `CF_TUNNEL_TOKEN`.
-3. En el túnel, añade nombres de host públicos:
-
-   | Nombre | Servicio |
-   |---|---|
-   | `tu-dominio.com` | `http://web:8080` |
-   | `ia.tu-dominio.com` (opcional) | `http://web:8081` |
-
+3. En el túnel, añade el nombre de host `ia.tu-dominio.com` → `http://web:8081`. El dominio raíz
+   queda libre para el portafolio, que se publica aparte (repo `portafolio`, Cloudflare Pages).
 4. `docker compose --profile tunel up -d`.
 5. **Antes** de publicar `ia.tu-dominio.com`: Zero Trust → Access → Aplicaciones → *Self-hosted*
    para ese nombre, con una política que solo permita tu correo (código de un solo uso). Así tu UI
@@ -102,16 +96,14 @@ túnel no hace falta nada de esto: `cloudflared` sale hacia Cloudflare y no abre
 Caddy solo confía en la IP fija de `cloudflared` (172.30.0.10) para saber la IP real del visitante,
 y GlubIA solo confía en Caddy (172.31.0.20): los límites por visitante no se pueden falsear.
 
-## Túneles rápidos sin cuenta (siempre encendidos)
+## Túnel rápido sin cuenta (siempre encendido)
 
 Si aún no tienes dominio, pon `COMPOSE_PROFILES=tunel-rapido` en `.env` y `docker compose up -d`.
-Se levantan `tunel-portafolio` (→ `web:8080`) y `tunel-ui` (→ `web:8081`) con URLs
-`*.trycloudflare.com`, y vuelven solos tras cada reinicio del equipo. La URL **cambia** cada vez
-que el contenedor se recrea: míralas con `scripts/vigilar.sh` (panel en vivo con servicios, modelo,
+Se levanta `tunel-ui` (→ `web:8081`) con una URL `*.trycloudflare.com`, y vuelve solo tras cada
+reinicio del equipo. La URL **cambia** cada vez que el contenedor se recrea: mírala con `scripts/vigilar.sh` (panel en vivo con servicios, modelo,
 memoria y enlaces) o `scripts/vigilar.sh --una-vez`.
 
 - La UI queda en internet protegida solo por `GLUBIA_PASS`: usa una contraseña larga.
-- No actives a la vez el perfil `tunel`: ambos usan la IP de confianza 172.30.0.10.
 - Recién creado, un enlace tarda ~1 minuto en resolver; el panel lo marca en amarillo.
 
 Para que el panel se abra al iniciar sesión, en `~/.config/hypr/autostart.lua`:
@@ -140,4 +132,4 @@ En Windows lo más sencillo sigue siendo `iniciar.bat`, que ya usa la GPU de for
 - **`Illegal instruction` (código 132):** la CPU no tiene AVX2 (pasa en algunas máquinas virtuales).
 - **Se queda sin memoria:** baja `GLUBIA_CTX` o usa el modelo de 0,5B; `GLUBIA_MEM` limita el
   contenedor para que no tumbe el resto del sistema.
-- **El portafolio carga pero la IA sale "dormida":** `docker compose ps` y `scripts/humo.sh`.
+- **La UI no responde:** `docker compose ps` y `scripts/humo.sh`.

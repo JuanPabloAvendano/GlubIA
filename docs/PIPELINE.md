@@ -57,7 +57,7 @@ El modelo nunca viaja dentro de la imagen: se actualizan por separado y con ritm
 - Pull request a `main`; se fusiona solo con el CI en verde.
 - `main` siempre se puede desplegar.
 
-Para probar la UI o el portafolio sin GPU ni modelo: `GLUBIA_MOTOR=falso python glubia_server.py`.
+Para probar la UI o la API sin GPU ni modelo: `GLUBIA_MOTOR=falso python glubia_server.py`.
 
 ## 3. Versiones
 
@@ -81,7 +81,7 @@ CHANGELOG.
 
 ```bash
 cd ~/glubia
-git pull                       # trae compose, Caddyfile, portafolio y scripts
+git pull                       # trae compose, Caddyfile y scripts
 scripts/desplegar.sh v2.1.0    # o "local" para construir aquí con el código actual
 ```
 
@@ -134,9 +134,8 @@ El modelo es la pieza que más cambia el comportamiento, así que tiene su propi
 5. `python3 scripts/evaluar.py` otra vez: compara con la ejecución anterior y sale con error si
    bajan los aciertos o la velocidad cae más de un 20 %. Si falla, vuelve a la carpeta anterior.
 
-Los casos están en `scripts/eval_casos.json`: código, Linux, systemd y, para el portafolio, que la
-persona no invente datos, no se desvíe del tema y no revele sus instrucciones. Añade un caso cada vez
-que veas una respuesta mala: así no vuelve.
+Los casos están en `scripts/eval_casos.json`: código, Linux y systemd. (Los del portafolio se fueron
+con él a su repo.) Añade un caso cada vez que veas una respuesta mala: así no vuelve.
 
 ## 6. Dependencias
 
@@ -148,7 +147,7 @@ dan la misma imagen.
 ## 7. Copias de seguridad
 
 Lo único que no se puede regenerar está en el volumen `glubia-datos` (conversaciones, claves,
-secreto de sesión) y en `.env` y `portafolio/perfil/perfil.md`:
+secreto de sesión) y en `.env`:
 
 ```bash
 docker run --rm -v glubia_glubia-datos:/datos -v "$PWD":/copia alpine \

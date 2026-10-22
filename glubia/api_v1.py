@@ -3,11 +3,6 @@
 * /v1/models y /v1/chat/completions: compatibles con OpenAI. Cualquier cliente
   (SDK de OpenAI, LangChain, curl, n8n...) puede usar GlubIA cambiando base_url.
   Requieren clave de API (Authorization: Bearer glb_...) o la sesion de la UI.
-
-* /v1/public/ask y /v1/public/info: lo que consume el portafolio. Sin clave,
-  pero con la persona fija (perfil.md), limites por IP, respuestas cortas,
-  cola propia de baja prioridad y CORS solo para tus dominios.
-  Desactivado salvo GLUBIA_PUBLICO=1.
 """
 
 from __future__ import annotations
@@ -22,8 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .api_ui import SYSTEM_PROMPT_DEFECTO
 from .flujo import CABECERAS_SSE, eventos, recolectar, sse
-from .motor import PRIORIDAD_PRIVADA, PRIORIDAD_PUBLICA, Parametros
-from .seguridad import anonimizar
+from .motor import PRIORIDAD_PRIVADA, Parametros
 
 log = logging.getLogger("glubia.api")
 router = APIRouter(prefix="/v1")
@@ -183,115 +177,10 @@ async def chat_completions(req: SolicitudChat, request: Request, quien: str = De
     return StreamingResponse(cuerpo(), media_type="text/event-stream", headers=CABECERAS_SSE)
 
 
-# --------------------------------------------------------------------------
-# Publico (portafolio)
-# --------------------------------------------------------------------------
-
-class MensajePublico(BaseModel):
-    role: Literal["user", "assistant"]
-    content: str = Field(max_length=4000)
-
-
-class Pregunta(BaseModel):
-    message: str = Field(min_length=1, max_length=8000)
-    history: List[MensajePublico] = Field(default_factory=list, max_length=40)
-    stream: bool = True
-
-
-class ErrorPublico(HTTPException):
-    """Error con texto pensado para mostrarse tal cual al visitante."""
-
-
-def _publico_activo(request: Request):
-    est = _estado(request)
-    if not est.cfg.publico:
-        raise ErrorPublico(status_code=404, detail="El asistente no está activado.")
-    datos = est.perfil.obtener()
-    if datos is None:
-        raise ErrorPublico(status_code=503, detail="El asistente todavía no está configurado.")
-    return est, datos
-
-
-@router.get("/public/info")
-async def publico_info(request: Request) -> dict:
-    est, (_, nombre, sugerencias) = _publico_activo(request)
-    m = est.motor.resumen()
-    if m["estado"] == "cargando":
-        estado = "loading"
-    elif m["estado"] != "listo":
-        estado = "offline"
-    elif est.motor.en_cola_de(PRIORIDAD_PUBLICA) >= est.cfg.publico_cola:
-        estado = "busy"
-    else:
-        estado = "online"
-    return {
-        "name": nombre,
-        "status": estado,
-        "queue": m["cola"],
-        "suggestions": sugerencias,
-        "limits": {"max_chars": est.cfg.publico_max_chars, "per_minute": est.cfg.publico_rpm,
-                   "per_day": est.cfg.publico_dia},
-    }
-
-
-@router.post("/public/ask")
-async def publico_preguntar(req: Pregunta, request: Request):
-    est, (sistema, _, _) = _publico_activo(request)
-    cfg = est.cfg
-    mensaje = req.message.strip()
-    if not mensaje:
-        raise ErrorPublico(status_code=400, detail="Escribe una pregunta.")
-    if len(mensaje) > cfg.publico_max_chars:
-        raise ErrorPublico(status_code=413,
-                           detail=f"La pregunta es muy larga (máximo {cfg.publico_max_chars} caracteres).")
-
-    ip = est.ip(request)
-    ok, espera = est.limites.permitir("pm:" + ip, cfg.publico_rpm, 60)
-    if ok:
-        ok, espera = est.limites.permitir("pd:" + ip, cfg.publico_dia, 86400)
-        if not ok:
-            raise ErrorPublico(status_code=429, headers={"Retry-After": str(espera)},
-                               detail="Llegaste al límite de preguntas de hoy. ¡Gracias por el interés!")
-    else:
-        raise ErrorPublico(status_code=429, headers={"Retry-After": str(espera)},
-                           detail=f"Vas muy rápido. Espera {espera} s y vuelve a preguntar.")
-
-    historial = [{"role": m.role, "content": m.content[:1500]}
-                 for m in req.history if m.content.strip()][-cfg.publico_historial:] if cfg.publico_historial else []
-    mensajes = [{"role": "system", "content": sistema}] + historial + [{"role": "user", "content": mensaje}]
-    params = Parametros(max_new_tokens=cfg.publico_tokens, temperature=cfg.publico_temp, top_p=0.9,
-                        repetition_penalty=1.05, max_seg=cfg.publico_seg)
-    trabajo, posicion = est.motor.enviar(mensajes, params, PRIORIDAD_PUBLICA, "publico")
-    log.info("publico: pregunta desde %s (posicion %d)", anonimizar(ip), posicion)
-
-    if not req.stream:
-        texto, fin, error = await recolectar(request, trabajo)
-        if error:
-            raise ErrorPublico(status_code=500, detail="No pude responder ahora mismo. Intenta de nuevo.")
-        return {"answer": texto, "finish_reason": (fin or {}).get("finish_reason")}
-
-    async def cuerpo():
-        yield sse({"id": trabajo.id, "queue": posicion})
-        async for tipo, valor in eventos(request, trabajo):
-            if tipo == "delta":
-                yield sse({"delta": valor})
-            elif tipo == "error":
-                yield sse({"error": "No pude responder ahora mismo. Intenta de nuevo."})
-            elif tipo == "fin":
-                yield sse({"done": True, "finish_reason": valor["finish_reason"]})
-            elif tipo == "ping":
-                yield ": ping\n\n"
-
-    return StreamingResponse(cuerpo(), media_type="text/event-stream", headers=CABECERAS_SSE)
-
-
 def respuesta_error(request: Request, status: int, mensaje: str, tipo: str = "invalid_request_error",
                     codigo: Optional[str] = None, headers: Optional[dict] = None) -> JSONResponse:
-    """Formatea errores segun la ruta: OpenAI en /v1, texto simple en /v1/public, detail en /api."""
-    ruta = request.url.path
-    if ruta.startswith("/v1/public"):
-        cuerpo = {"error": mensaje}
-    elif ruta.startswith("/v1/"):
+    """Formatea errores segun la ruta: OpenAI en /v1, detail en /api."""
+    if request.url.path.startswith("/v1/"):
         cuerpo = {"error": {"message": mensaje, "type": tipo, "code": codigo}}
     else:
         cuerpo = {"detail": mensaje}

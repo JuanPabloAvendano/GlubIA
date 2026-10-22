@@ -1,8 +1,8 @@
 """Gestion de claves de API.
 
-    python -m glubia.claves crear portafolio     # imprime la clave UNA sola vez
+    python -m glubia.claves crear n8n           # imprime la clave UNA sola vez
     python -m glubia.claves listar
-    python -m glubia.claves revocar portafolio
+    python -m glubia.claves revocar n8n
 
 En el contenedor:
     docker compose exec glubia python -m glubia.claves crear mi-script
