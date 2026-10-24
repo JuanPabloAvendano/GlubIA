@@ -39,7 +39,7 @@ def _estado(request: Request):
 
 def _exigir_clave(request: Request) -> str:
     quien = _estado(request).quien(request)
-    if quien is None:
+    if quien is None or quien.startswith("invitado:"):   # los invitados solo usan la UI, con sus limites
         raise ErrorAPI(401, "Falta una clave de API valida (Authorization: Bearer glb_...).",
                        codigo="invalid_api_key")
     return quien

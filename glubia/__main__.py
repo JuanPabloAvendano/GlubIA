@@ -12,7 +12,8 @@ from .config import cargar_config
 def _banner(cfg, estado) -> None:
     linea = "=" * 66
     print(f"\n{linea}")
-    print(f"  {cfg.titulo} {__version__}  ->  modelo {cfg.nombre_modelo} (cargando en {cfg.device})")
+    donde = "ollama" if cfg.motor == "ollama" else cfg.device
+    print(f"  {cfg.titulo} {__version__}  ->  modelo {cfg.nombre_modelo} (cargando en {donde})")
     print(f"  Local .......... http://127.0.0.1:{cfg.port}")
     print(f"  Red local ...... http://<ip-de-esta-maquina>:{cfg.port}")
     print(f"  API ............ http://127.0.0.1:{cfg.port}/v1  (compatible con OpenAI)")

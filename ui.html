@@ -179,6 +179,99 @@
   .chip{border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-size:12.5px;color:var(--tx2)}
   .chip:hover{border-color:var(--ac2);color:var(--ac)}
 
+  /* ---------- Login: invitacion ---------- */
+  .alt{display:block;margin:14px auto 0;font-size:12.5px;color:var(--tx2);text-decoration:underline;
+    text-underline-offset:3px;background:none!important;color:var(--tx2)!important;width:auto!important;
+    font-weight:400!important;padding:4px!important}
+  .alt:hover{color:var(--ac)!important}
+
+  /* ---------- Rol y selector de modelo ---------- */
+  .tag{font:11px var(--mono);border:1px solid var(--line);border-radius:20px;padding:3px 9px;color:var(--warn);
+    white-space:nowrap}
+  .wrapm{position:relative}
+  #mdlBtn{max-width:280px}
+  #mdlBtn .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #mdlMenu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:340px;max-width:calc(100vw - 24px);
+    background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:6px;
+    box-shadow:0 12px 32px rgba(0,0,0,.45)}
+  #mdlMenu.on{display:block}
+  .mi{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border-radius:7px;padding:8px 9px;font-size:13px}
+  .mi:hover:not(:disabled){background:var(--bg3)}
+  .mi:disabled{opacity:.55;cursor:default}
+  .mi .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mi small,.mnota{font:11px var(--mono);color:var(--tx3)}
+  .mnota{padding:6px 9px 4px;display:block}
+  .mi.on .dot{background:var(--ac);box-shadow:0 0 7px rgba(94,230,168,.65)}
+  .mi.carg .dot{background:var(--warn)}
+
+  /* ---------- Panel de admin ---------- */
+  #panel{display:none;position:fixed;inset:0;z-index:50;background:rgba(5,7,10,.72);padding:22px;overflow:auto}
+  #panel.on{display:block}
+  .pn{max-width:980px;margin:0 auto;background:var(--bg2);border:1px solid var(--line);border-radius:12px}
+  .pn-h{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);
+    position:sticky;top:-22px;background:var(--bg2);border-radius:12px 12px 0 0;z-index:2}
+  .pn-h b{font-size:15px}
+  .pn-h span{flex:1;font:12px var(--mono);color:var(--tx2)}
+  .pn section{padding:16px;border-bottom:1px solid var(--line)}
+  .pn section:last-child{border-bottom:0}
+  .pn h3{margin:0 0 4px;font-size:13.5px;font-weight:600}
+  .pn .sub{margin:0 0 12px;font-size:12.5px;color:var(--tx2)}
+  .tabla{width:100%;border-collapse:collapse;font-size:12.8px}
+  .tabla th{font:500 11px var(--mono);color:var(--tx3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  .tabla td{padding:7px 8px;border-bottom:1px solid #151c25;vertical-align:middle}
+  .tabla tr:last-child td{border-bottom:0}
+  .tabla .mono{font-family:var(--mono);font-size:12px}
+  .tabla .nm{word-break:break-all}
+  .scroll{overflow-x:auto}
+  .btn{border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:12.5px;color:var(--tx2);white-space:nowrap}
+  .btn:hover:not(:disabled){border-color:var(--ac2);color:var(--ac)}
+  .btn.pri{background:var(--ac);color:#07110c;border-color:var(--ac);font-weight:600}
+  .btn.pri:hover:not(:disabled){color:#07110c;filter:brightness(1.08)}
+  .btn.peligro:hover:not(:disabled){border-color:var(--err);color:var(--err)}
+  .btn:disabled{opacity:.45;cursor:default}
+  .pill{font:11px var(--mono);border-radius:20px;padding:2px 8px;border:1px solid var(--line);color:var(--tx2);white-space:nowrap}
+  .pill.ok{color:var(--ac);border-color:var(--ac2)}
+  .pill.warn{color:var(--warn);border-color:#6b5532}
+  .pill.err{color:var(--err);border-color:#6d3341}
+  .fila{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .fila input[type=text],.fila input[type=number],.fila select,.pn textarea{background:var(--bg);border:1px solid var(--line);
+    border-radius:7px;padding:7px 10px;font-size:13px;outline:none;min-width:0}
+  .fila input[type=text]{flex:1;min-width:200px;font-family:var(--mono)}
+  .fila input:focus,.fila select:focus,.pn textarea:focus{border-color:var(--ac2)}
+  .op select,.op input[type=number]{background:var(--bg2);border:1px solid var(--line);border-radius:6px;
+    padding:4px 6px;font:12.5px var(--mono);color:var(--tx);outline:none}
+  .op select:focus,.op input[type=number]:focus{border-color:var(--ac2)}
+  select option{background:var(--bg2);color:var(--tx)}
+  .pn textarea{width:100%;height:96px;font:12.5px/1.5 var(--mono);resize:vertical;margin-top:8px}
+  .rejilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .op{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);
+    border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:12.8px}
+  .op small{display:block;color:var(--tx3);font-size:11.5px}
+  .sw{position:relative;display:inline-block;vertical-align:middle;width:34px;height:19px;flex:0 0 34px}
+  .sw input{opacity:0;width:0;height:0}
+  .sw i{position:absolute;inset:0;background:var(--bg3);border:1px solid var(--line);border-radius:20px;cursor:pointer;transition:.15s}
+  .sw i::after{content:"";position:absolute;width:13px;height:13px;left:2px;top:2px;border-radius:50%;background:var(--tx3);transition:.15s}
+  .sw input:checked+i{background:#173a2b;border-color:var(--ac2)}
+  .sw input:checked+i::after{transform:translateX(15px);background:var(--ac)}
+  .barra{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:5px}
+  .barra i{display:block;height:100%;background:var(--ac);width:0}
+  .codigo{margin-top:12px;border:1px solid var(--ac2);border-radius:9px;padding:12px;background:#0b1712}
+  .codigo b{font:600 18px var(--mono);letter-spacing:.06em;color:var(--ac)}
+  .codigo p{margin:6px 0 0;font-size:12px;color:var(--tx2);word-break:break-all}
+  .audit{max-height:280px;overflow:auto;font:11.8px/1.5 var(--mono)}
+  .audit div{padding:4px 0;border-bottom:1px solid #151c25;display:flex;gap:10px}
+  .audit .t{color:var(--tx3);flex:0 0 112px}
+  .audit .ti{flex:0 0 120px;color:var(--tx)}
+  .audit .d{color:var(--tx2);word-break:break-word;min-width:0}
+  .audit .alerta .ti,.audit .fuga_de_prompt .ti{color:var(--err)}
+  @media (max-width:760px){
+    #panel{padding:0}
+    .pn{border-radius:0;border:0;min-height:100%}
+    .pn-h{top:0;border-radius:0}
+    .audit .t{flex-basis:70px}.audit .ti{flex-basis:90px}
+    #mdlBtn{max-width:150px}
+  }
+
   #toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,16px);
     background:var(--bg3);border:1px solid var(--line);border-radius:8px;
     padding:8px 15px;font-size:12.5px;opacity:0;pointer-events:none;
@@ -207,10 +300,11 @@
 <div id="login">
   <form class="card" id="loginForm" autocomplete="on">
     <div class="logo">Glub<b>IA</b></div>
-    <p>Acceso restringido</p>
+    <p id="loginSub">Acceso restringido</p>
     <input id="pw" type="password" placeholder="Contraseña" autocomplete="current-password" required>
     <button type="submit" id="loginBtn">Entrar</button>
     <div id="loginErr"></div>
+    <button type="button" class="alt" id="modoLogin">Tengo una invitación</button>
   </form>
 </div>
 
@@ -237,6 +331,12 @@
   <header>
     <button class="hb" id="burger">☰</button>
     <div id="hTitle">Nueva conversación</div>
+    <span class="tag" id="rolTag" style="display:none"></span>
+    <div class="wrapm">
+      <button class="hb" id="mdlBtn" title="Cambiar de modelo"><i class="dot" id="mdlDot"></i><span class="nm" id="mdlNom">modelo</span>▾</button>
+      <div id="mdlMenu"></div>
+    </div>
+    <button class="hb hide-sm" id="panelBtn" style="display:none">▣ Panel</button>
     <button class="hb" id="cfgBtn">⚙ Ajustes</button>
     <button class="hb hide-sm" id="expBtn">↓ Exportar</button>
     <button class="hb hide-sm" id="outBtn" style="display:none">Salir</button>
@@ -273,6 +373,73 @@
 
 <div id="toast"></div>
 
+<!-- ===================== PANEL DE ADMIN ===================== -->
+<div id="panel" role="dialog" aria-label="Panel de admin">
+  <div class="pn">
+    <div class="pn-h"><b>Panel de admin</b><span id="pnEstado"></span><button class="hb" id="pnCerrar">✕ Cerrar</button></div>
+
+    <section>
+      <h3>Modelos en este equipo</h3>
+      <p class="sub">«Usar» lo carga en lugar del actual (la respuesta en curso termina antes). «Invitados» marca los que ellos pueden elegir.</p>
+      <div class="scroll" id="pnModelos"></div>
+      <div class="fila">
+        <input type="text" id="pullNombre" placeholder="usuario/modelo:etiqueta  (lo mismo que en «ollama run»)" spellcheck="false">
+        <button class="btn pri" id="pullBtn">Descargar</button>
+      </div>
+      <div id="pnDescargas"></div>
+    </section>
+
+    <section>
+      <h3>Cómo corre el modelo</h3>
+      <p class="sub">Al cambiar algo de esto, el modelo activo se recarga con el ajuste nuevo.</p>
+      <div class="rejilla">
+        <label class="op"><span>GPU en Ollama<small>apagado = CPU (en tu Core Ultra fue más rápida)</small></span>
+          <span class="sw"><input type="checkbox" id="ajGpu"><i></i></span></label>
+        <label class="op"><span>Dejar pensar<small>Qwen3.5 razona antes de responder: mejor y más lento</small></span>
+          <span class="sw"><input type="checkbox" id="ajPensar"><i></i></span></label>
+        <label class="op"><span>Memoria de Ollama<small>cuánto se queda cargado sin uso</small></span>
+          <select id="ajKeep"><option value="-1">siempre</option><option value="30m">30 min</option>
+            <option value="2h">2 h</option><option value="5m">5 min</option></select></label>
+        <label class="op"><span>Dispositivo OpenVINO<small>para los modelos OpenVINO</small></span>
+          <select id="ajDev"><option>GPU</option><option>CPU</option><option>AUTO</option><option>NPU</option></select></label>
+      </div>
+    </section>
+
+    <section>
+      <h3>Invitados</h3>
+      <p class="sub">Cada invitación es un código de un solo uso que caduca. Revocar corta el acceso al instante.</p>
+      <div class="fila">
+        <input type="text" id="invNombre" placeholder="Nombre de quien invitas" maxlength="60" style="font-family:var(--sans)">
+        <select id="invHoras"><option value="1">1 hora</option><option value="2" selected>2 horas</option>
+          <option value="8">8 horas</option><option value="24">1 día</option><option value="168">1 semana</option></select>
+        <button class="btn pri" id="invCrear">Crear invitación</button>
+      </div>
+      <div id="invNuevo"></div>
+      <div class="scroll" id="pnInvitados" style="margin-top:12px"></div>
+
+      <h3 style="margin-top:18px">Qué pueden hacer</h3>
+      <div class="rejilla" style="margin-top:10px">
+        <label class="op"><span>Cambiar de modelo<small>solo entre los marcados arriba</small></span>
+          <span class="sw"><input type="checkbox" id="pmCambiar"><i></i></span></label>
+        <label class="op"><span>Largo máximo<small>tokens por respuesta</small></span>
+          <input type="number" id="pmTokens" min="64" max="8192" step="64" style="width:86px"></label>
+        <label class="op"><span>Mensajes por minuto<small>por invitado</small></span>
+          <input type="number" id="pmRpm" min="1" max="120" style="width:70px"></label>
+      </div>
+      <label class="sub" style="display:block;margin:12px 0 0">Instrucciones para el modelo cuando habla con un invitado
+        (GlubIA les añade siempre su política de seguridad; el invitado no puede cambiarlas):</label>
+      <textarea id="pmSystem" spellcheck="false"></textarea>
+      <div class="fila"><button class="btn pri" id="pmGuardar">Guardar permisos</button></div>
+    </section>
+
+    <section>
+      <h3>Seguridad y actividad</h3>
+      <p class="sub">Entradas de invitados, cambios, intentos de saltarse las reglas y fugas bloqueadas.</p>
+      <div class="audit" id="pnAudit"></div>
+    </section>
+  </div>
+</div>
+
 <script>
 "use strict";
 /* =======================================================================
@@ -293,15 +460,18 @@ let servidorConv = false;             // el servidor guarda conversaciones (Glub
 let sysDefecto = "";
 const lats = [];                      // ultimas mediciones de latencia
 let ajustes = { temp:0.2, maxt:1024, sys:null };
+let rol = "admin", invitado = null;   // lo decide el servidor (/api/session); la UI solo lo refleja
 
+// Un invitado en este mismo navegador no ve tus conversaciones: guarda en otra clave.
+const lsConv = () => rol === "invitado" ? LS_CONV + ".invitado" : LS_CONV;
 const guardar = () => { try{
-  localStorage.setItem(LS_CONV, JSON.stringify(convs.slice(0,60)));
-  localStorage.setItem(LS_SET, JSON.stringify(ajustes));
+  localStorage.setItem(lsConv(), JSON.stringify(convs.slice(0,60)));
+  if(rol === "admin") localStorage.setItem(LS_SET, JSON.stringify(ajustes));
 }catch(e){ toast("No se pudo guardar en este navegador"); } };
 
 function cargar(){
-  try{ convs = JSON.parse(localStorage.getItem(LS_CONV)||"[]") || []; }catch(e){ convs = []; }
-  try{ Object.assign(ajustes, JSON.parse(localStorage.getItem(LS_SET)||"{}")); }catch(e){}
+  try{ convs = JSON.parse(localStorage.getItem(lsConv())||"[]") || []; }catch(e){ convs = []; }
+  if(rol === "admin"){ try{ Object.assign(ajustes, JSON.parse(localStorage.getItem(LS_SET)||"{}")); }catch(e){} }
 }
 
 /* -------------------------------------------------------------------------
@@ -315,7 +485,10 @@ function contexto(msgs){
   const out = [];
   msgs.forEach((m, i) => {
     if(fallida(m) || (m.role === "user" && fallida(msgs[i+1]))) return;
-    out.push({ role:m.role, content:m.content.replace(/\n\n\*\(detenido\)\*$/, "") });
+    // La firma la pone el servidor: sin ella, a un invitado no se le acepta el turno del asistente.
+    const item = { role:m.role, content:m.content.replace(/\n\n\*\(detenido\)\*$/, "") };
+    if(m.firma) item.firma = m.firma;
+    out.push(item);
   });
   return out.slice(-HIST_MAX);
 }
@@ -604,12 +777,16 @@ async function enviar(){
   }
   ta.value = ""; autoSize(); guardar(); render();
 
-  const cuerpo = {
+  const cuerpo = rol === "admin" ? {
     prompt: texto,
     history: contexto(c.msgs.slice(0,-1)),
     system: ajustes.sys || undefined,
     max_new_tokens: ajustes.maxt,
     temperature: ajustes.temp
+  } : {                                   // el servidor fija el resto para invitados
+    prompt: texto,
+    history: contexto(c.msgs.slice(0,-1)),
+    max_new_tokens: (invitado && invitado.max_tokens) || 1024
   };
 
   // Turno del modelo, en vivo
@@ -622,7 +799,7 @@ async function enviar(){
 
   generando = true; marcarBoton();
   ctrl = new AbortController();
-  let acc = "", abortado = false, ultimo = 0, fallo = false, ctxServidor = null;
+  let acc = "", abortado = false, ultimo = 0, fallo = false, ctxServidor = null, firma = null;
   trabajo = null;
 
   const repintar = (forzar) => {
@@ -652,6 +829,7 @@ async function enviar(){
       const j = await r2.json();
       if(!r2.ok) throw new Error(j.detail || "Error del servidor");
       acc = (j.response || "").trim();
+      firma = j.firma || null;
       if(j.seconds) $("#tps").textContent = j.seconds + " s";
     } else if(!r.ok){
       let msg = "Error " + r.status;
@@ -682,6 +860,7 @@ async function enviar(){
             // Cerramos al recibir el evento final en vez de esperar a que el
             // socket muera: asi no dependemos de como delimite el servidor.
             if(d.tps) $("#tps").textContent = d.tps + " tok/s";
+            firma = d.firma || null;
             fin = true; break;
           }
         }
@@ -706,6 +885,7 @@ async function enviar(){
   const msg = { role:"assistant", content:acc };
   if(abortado) msg.detenido = true;
   if(fallo) msg.err = true;
+  else if(firma) msg.firma = firma;
   body.innerHTML = markdown(acc + (abortado ? "\n\n*(detenido)*" : ""));
   c.msgs.push(msg);
   c.ts = Date.now();
@@ -792,6 +972,10 @@ async function ping(){
     $("#lat").textContent = ms + " ms";
     $("#dev").textContent = j.device || "—";
     $("#mdl").textContent = j.model || "—";
+    if(modelos && !$("#mdlMenu").classList.contains("on")){
+      $("#mdlNom").textContent = j.ready === false ? "cargando " + (j.model || "") + "…" : (j.model || "—");
+      $("#mdlDot").className = "dot " + (j.ready === false ? "" : "ok");
+    }
     if(j.ready === false){ $("#dot").className = "dot"; $("#linkTxt").textContent = "cargando modelo…"; }
     else if(j.queue > 0){ $("#linkTxt").textContent = "enlace activo · cola " + j.queue; }
   }catch(e){
@@ -809,17 +993,31 @@ function mostrarLogin(msg){
   setTimeout(() => $("#pw").focus(), 60);
 }
 
+let modoInvitacion = false;
+function modoLogin(inv){
+  modoInvitacion = inv;
+  const pw = $("#pw");
+  pw.type = inv ? "text" : "password";
+  pw.placeholder = inv ? "Código de invitación (XXXX-XXXX-XXXX-XXXX)" : "Contraseña";
+  pw.autocomplete = inv ? "off" : "current-password";
+  $("#loginSub").textContent = inv ? "Entrar como invitado" : "Acceso restringido";
+  $("#modoLogin").textContent = inv ? "Soy el dueño: usar contraseña" : "Tengo una invitación";
+  $("#loginErr").textContent = "";
+}
+$("#modoLogin").onclick = () => { modoLogin(!modoInvitacion); $("#pw").value = ""; $("#pw").focus(); };
+
 $("#loginForm").onsubmit = async e => {
   e.preventDefault();
   const btn = $("#loginBtn"); btn.disabled = true;
   $("#loginErr").textContent = "";
   try{
+    const valor = $("#pw").value.trim();
     const r = await fetch("api/login", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({password: $("#pw").value})
+      body:JSON.stringify(modoInvitacion ? {codigo: valor} : {password: valor})
     });
     const j = await r.json().catch(() => ({}));
-    if(r.ok){ $("#login").classList.remove("on"); $("#pw").value = ""; arrancarApp(); }
+    if(r.ok){ $("#login").classList.remove("on"); $("#pw").value = ""; location.replace(location.pathname); return; }
     else $("#loginErr").textContent = j.detail || "Acceso denegado";
   }catch(e){ $("#loginErr").textContent = "No hay conexión con el servidor"; }
   btn.disabled = false;
@@ -845,6 +1043,11 @@ $("#burger").onclick = () => { $("#side").classList.toggle("on"); $("#scrim").cl
 $("#scrim").onclick = cerrarSide;
 $("#cfgBtn").onclick = () => { const on = $("#cfg").classList.toggle("on"); $("#cfgBtn").classList.toggle("on", on); };
 $("#outBtn").onclick = async () => { await fetch("api/logout", {method:"POST"}); location.reload(); };
+$("#mdlBtn").onclick = e => { e.stopPropagation(); abrirMenuModelos(); };
+document.addEventListener("click", e => { if(!e.target.closest(".wrapm")) $("#mdlMenu").classList.remove("on"); });
+$("#panelBtn").onclick = abrirPanel;
+$("#pnCerrar").onclick = cerrarPanel;
+$("#panel").addEventListener("click", e => { if(e.target.id === "panel") cerrarPanel(); });
 
 $("#temp").oninput = e => { ajustes.temp = +e.target.value; $("#tVal").textContent = ajustes.temp.toFixed(2); guardar(); };
 $("#maxt").oninput = e => { ajustes.maxt = +e.target.value; $("#mVal").textContent = ajustes.maxt; guardar(); };
@@ -854,11 +1057,279 @@ $("#resetSys").onclick = () => { ajustes.sys = null; $("#sysPrompt").value = sys
 addEventListener("resize", sparkline);
 addEventListener("keydown", e => {
   if((e.ctrlKey || e.metaKey) && e.key === "k"){ e.preventDefault(); crear(); }
+  if(e.key === "Escape"){ cerrarPanel(); $("#mdlMenu").classList.remove("on"); }
 });
 addEventListener("beforeunload", e => { if(generando){ e.preventDefault(); e.returnValue = ""; } });
 
+/* =======================================================================
+   Modelos: selector de la cabecera (admin e invitados con permiso)
+   ======================================================================= */
+async function api(ruta, opciones){
+  const o = opciones || {};
+  const r = await fetch(ruta, { method:o.method || "GET", cache:"no-store",
+    headers: o.body ? {"Content-Type":"application/json"} : undefined,
+    body: o.body ? JSON.stringify(o.body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if(r.status === 401){ mostrarLogin("La sesión caducó. Vuelve a entrar."); throw new Error("sesión"); }
+  if(!r.ok){
+    const d = j.detail;
+    throw new Error(typeof d === "string" ? d : (Array.isArray(d) ? "Valor no válido: " + (d[0].loc || []).slice(-1)[0] : "Error " + r.status));
+  }
+  return j;
+}
+
+const gb = b => !b ? "" : b >= 1e9 ? (b/1e9).toFixed(1) + " GB" : (b/1e6).toFixed(0) + " MB";
+const nombreCorto = id => (id || "").replace(/^(ollama|openvino|falso):/, "");
+const MOTOR = { ollama:"Ollama", openvino:"OpenVINO", falso:"prueba" };
+let modelos = null;
+
+function pintarModeloActual(j){
+  modelos = j;
+  const cargando = j.estado !== "listo";
+  $("#mdlNom").textContent = cargando ? "cargando " + nombreCorto((j.cambio && j.cambio.modelo) || j.activo) + "…"
+                                      : nombreCorto(j.activo);
+  $("#mdlDot").className = "dot " + (cargando ? "" : "ok");
+}
+
+async function abrirMenuModelos(){
+  const menu = $("#mdlMenu");
+  if(menu.classList.contains("on")){ menu.classList.remove("on"); return; }
+  menu.innerHTML = '<span class="mnota">cargando…</span>';
+  menu.classList.add("on");
+  try{ pintarMenu(await api("api/modelos")); }
+  catch(e){ menu.innerHTML = '<span class="mnota">' + esc(e.message) + '</span>'; }
+}
+
+function pintarMenu(j){
+  pintarModeloActual(j);
+  const menu = $("#mdlMenu");
+  menu.innerHTML = "";
+  if(!j.puede_cambiar) menu.insertAdjacentHTML("beforeend", '<span class="mnota">El admin no permite cambiar de modelo.</span>');
+  j.modelos.forEach(m => {
+    const b = document.createElement("button");
+    const activo = m.id === j.activo;
+    b.className = "mi" + (activo ? (j.estado === "listo" ? " on" : " carg") : "");
+    b.disabled = !j.puede_cambiar || activo || j.estado !== "listo";
+    b.innerHTML = '<i class="dot"></i><span class="nm"></span><small></small>';
+    b.querySelector(".nm").textContent = m.nombre;
+    b.querySelector("small").textContent = [m.parametros, MOTOR[m.motor]].filter(x => x && x !== "?").join(" · ");
+    b.onclick = () => activarModelo(m.id);
+    menu.appendChild(b);
+  });
+  if(j.error_ollama) menu.insertAdjacentHTML("beforeend", '<span class="mnota">' + esc(j.error_ollama) + '</span>');
+  if(rol === "admin") menu.insertAdjacentHTML("beforeend", '<span class="mnota">Más opciones en ▣ Panel</span>');
+}
+
+async function activarModelo(id){
+  if(generando){ toast("Espera a que termine la respuesta"); return; }
+  $("#mdlMenu").classList.remove("on");
+  try{
+    const j = await api("api/modelos/activar", {method:"POST", body:{id}});
+    toast(j.sin_cambios ? "Ya está activo" : "Cargando " + nombreCorto(id) + "…");
+    vigilarCambio();
+  }catch(e){ toast(e.message); }
+}
+
+// Tras pedir un cambio: consulta seguido hasta que el modelo nuevo esté listo (o falle).
+let tCambio = null;
+async function vigilarCambio(){
+  clearTimeout(tCambio);
+  try{
+    const j = await api("api/modelos");
+    pintarModeloActual(j);
+    if(j.cambio && j.cambio.estado === "error") toast("No se pudo cargar: " + (j.cambio.error || "error") + ". Sigue el anterior.");
+    if(j.estado !== "listo" || (j.cambio && ["pendiente","cargando"].includes(j.cambio.estado))){
+      tCambio = setTimeout(vigilarCambio, 1500); return;
+    }
+    if(j.cambio && j.cambio.estado === "listo" && j.cambio.ts > (vigilarCambio.visto || 0)){
+      vigilarCambio.visto = j.cambio.ts; toast("Modelo listo: " + nombreCorto(j.activo));
+    }
+    if($("#panel").classList.contains("on")) cargarPanel();
+  }catch(e){ tCambio = setTimeout(vigilarCambio, 3000); }
+}
+
+/* =======================================================================
+   Panel de admin. Todo lo pinta con textContent/esc: los nombres de modelo y
+   los extractos de la auditoria pueden venir de un invitado.
+   ======================================================================= */
+let tPanel = null, panelDatos = null;
+
+function abrirPanel(){
+  $("#panel").classList.add("on");
+  cargarPanel();
+  clearInterval(tPanel); tPanel = setInterval(cargarPanel, 3000);
+}
+function cerrarPanel(){ $("#panel").classList.remove("on"); clearInterval(tPanel); $("#invNuevo").innerHTML = ""; }
+
+async function cargarPanel(){
+  try{ pintarPanel(await api("api/admin/estado")); }
+  catch(e){ $("#pnEstado").textContent = e.message; }
+}
+
+const hora = ts => ts ? new Date(ts * 1000).toLocaleString("es", {day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"}) : "—";
+
+function pintarPanel(j){
+  const primera = !panelDatos;
+  panelDatos = j;
+  const m = j.modelos, aj = j.ajustes, inv = aj.invitados;
+  pintarModeloActual(m);
+  $("#pnEstado").textContent = m.estado === "listo" ? "activo: " + nombreCorto(m.activo) + " · " + (m.dispositivo || "")
+                                                    : "cargando " + nombreCorto((m.cambio && m.cambio.modelo) || m.activo) + "…";
+
+  // Modelos
+  const permitidos = new Set(inv.modelos);
+  let t = '<table class="tabla"><thead><tr><th>modelo</th><th>motor</th><th>tamaño</th><th>estado</th><th>invitados</th><th></th></tr></thead><tbody>';
+  m.modelos.forEach(x => {
+    const activo = x.id === m.activo;
+    const estado = activo ? (m.estado === "listo" ? '<span class="pill ok">activo</span>' : '<span class="pill warn">cargando</span>')
+                          : (x.en_memoria ? '<span class="pill">en memoria</span>' : "");
+    t += '<tr><td class="nm"><b>' + esc(x.nombre) + '</b><br><span class="mono" style="color:var(--tx3)">' +
+         esc([x.parametros, x.cuantizacion].filter(v => v && v !== "?").join(" · ")) + '</span></td>' +
+         '<td>' + esc(MOTOR[x.motor] || x.motor) + '</td><td class="mono">' + gb(x.bytes) + '</td><td>' + estado + '</td>' +
+         '<td><label class="sw"><input type="checkbox" data-inv="' + esc(x.id) + '"' + (permitidos.has(x.id) ? " checked" : "") + '><i></i></label></td>' +
+         '<td style="text-align:right;white-space:nowrap"><button class="btn" data-usar="' + esc(x.id) + '"' + (activo || m.estado !== "listo" ? " disabled" : "") + '>Usar</button> ' +
+         (x.motor === "ollama" ? '<button class="btn peligro" data-borrar="' + esc(x.id) + '"' + (activo ? " disabled" : "") + '>Borrar</button>' : "") +
+         '</td></tr>';
+  });
+  t += "</tbody></table>";
+  if(m.error_ollama) t += '<p class="sub" style="color:var(--warn);margin-top:8px">' + esc(m.error_ollama) + '</p>';
+  if(m.cambio && m.cambio.estado === "error") t += '<p class="sub" style="color:var(--err);margin-top:8px">Último cambio fallido (' +
+     esc(m.cambio.modelo || "") + '): ' + esc(m.cambio.error || "") + '</p>';
+  $("#pnModelos").innerHTML = t;
+
+  // Descargas
+  $("#pnDescargas").innerHTML = j.descargas.slice().reverse().map(d => {
+    const pct = d.total ? Math.round(100 * d.hecho / d.total) : 0;
+    const cls = d.estado === "listo" ? "ok" : d.estado === "error" ? "err" : "warn";
+    return '<div style="margin-top:10px"><div class="fila" style="margin:0;justify-content:space-between"><span class="mono" style="font-size:12px">' +
+      esc(d.nombre) + '</span><span class="pill ' + cls + '">' + esc(d.estado === "descargando" ? (pct ? pct + " %" : d.detalle) : d.estado === "error" ? d.detalle : "listo") +
+      '</span></div>' + (d.estado === "descargando" ? '<div class="barra"><i style="width:' + pct + '%"></i></div>' : "") + '</div>';
+  }).join("");
+
+  // Ajustes (solo al abrir: no pisar lo que estás editando)
+  if(primera){
+    $("#ajGpu").checked = !!aj.ollama.gpu;
+    $("#ajPensar").checked = !!aj.ollama.pensar;
+    $("#ajKeep").value = String(aj.ollama.keep);
+    if(!$("#ajKeep").value){ $("#ajKeep").insertAdjacentHTML("beforeend", '<option></option>');
+      $("#ajKeep").lastChild.value = aj.ollama.keep; $("#ajKeep").lastChild.textContent = aj.ollama.keep; $("#ajKeep").value = aj.ollama.keep; }
+    $("#ajDev").value = aj.openvino.device;
+    $("#pmCambiar").checked = !!inv.cambiar_modelo;
+    $("#pmTokens").value = inv.max_tokens;
+    $("#pmRpm").value = inv.rpm;
+    $("#pmSystem").value = inv.system;
+  }
+
+  // Invitaciones
+  const ESTADO = { "sin usar":"warn", "en uso":"ok", "caducada":"", "revocada":"err" };
+  $("#pnInvitados").innerHTML = !j.invitados.length ? '<p class="sub">Aún no has invitado a nadie.</p>' :
+    '<table class="tabla"><thead><tr><th>nombre</th><th>estado</th><th>expira</th><th>último uso</th><th></th></tr></thead><tbody>' +
+    j.invitados.map(i => '<tr><td>' + esc(i.nombre) + '</td><td><span class="pill ' + (ESTADO[i.estado] || "") + '">' + esc(i.estado) +
+      '</span></td><td class="mono">' + hora(i.expira) + '</td><td class="mono">' + hora(i.ultimo_uso) + '</td><td style="text-align:right">' +
+      (["sin usar","en uso"].includes(i.estado) ? '<button class="btn peligro" data-revocar="' + esc(i.id) + '">Revocar</button>' : "") +
+      '</td></tr>').join("") + '</tbody></table>';
+
+  // Auditoria
+  const detalle = e => {
+    const d = Object.assign({}, e); delete d.ts; delete d.tipo; delete d.quien;
+    return Object.entries(d).map(([k, v]) => k + ": " + (Array.isArray(v) ? v.join(", ") : typeof v === "number" && k === "expira" ? hora(v) : v)).join(" · ");
+  };
+  $("#pnAudit").innerHTML = !j.auditoria.length ? '<p class="sub">Sin actividad todavía.</p>' :
+    j.auditoria.map(e => '<div class="' + esc(e.tipo) + '"><span class="t">' + hora(e.ts) + '</span><span class="ti">' + esc(e.tipo) +
+      '</span><span class="d">' + esc((e.quien || "") + " · " + detalle(e)) + '</span></div>').join("");
+}
+
+$("#panel").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-usar],button[data-borrar],button[data-revocar]");
+  if(!b) return;
+  try{
+    if(b.dataset.usar){ await activarModelo(b.dataset.usar); }
+    else if(b.dataset.borrar){
+      if(!confirm("¿Borrar " + nombreCorto(b.dataset.borrar) + " del disco? Tendrías que volver a descargarlo.")) return;
+      await api("api/admin/modelos/" + b.dataset.borrar.split("/").map(encodeURIComponent).join("/"), {method:"DELETE"});
+      toast("Borrado");
+    }
+    else if(b.dataset.revocar){
+      await api("api/admin/invitados/" + encodeURIComponent(b.dataset.revocar), {method:"DELETE"});
+      toast("Invitación revocada");
+    }
+    cargarPanel();
+  }catch(err){ toast(err.message); }
+});
+
+$("#panel").addEventListener("change", async e => {
+  const c = e.target.closest("input[data-inv]");
+  if(!c || !panelDatos) return;
+  const lista = new Set(panelDatos.ajustes.invitados.modelos);
+  c.checked ? lista.add(c.dataset.inv) : lista.delete(c.dataset.inv);
+  try{ await api("api/admin/ajustes", {method:"PUT", body:{invitados:{modelos:[...lista]}}}); cargarPanel(); }
+  catch(err){ toast(err.message); c.checked = !c.checked; }
+});
+
+async function guardarMotor(cambio){
+  try{ await api("api/admin/ajustes", {method:"PUT", body:cambio}); toast("Guardado. Recargando el modelo…"); vigilarCambio(); }
+  catch(e){ toast(e.message); }
+}
+$("#ajGpu").onchange = e => guardarMotor({ollama:{gpu:e.target.checked}});
+$("#ajPensar").onchange = e => guardarMotor({ollama:{pensar:e.target.checked}});
+$("#ajKeep").onchange = e => guardarMotor({ollama:{keep:e.target.value}});
+$("#ajDev").onchange = e => guardarMotor({openvino:{device:e.target.value}});
+
+$("#pmGuardar").onclick = async () => {
+  try{
+    await api("api/admin/ajustes", {method:"PUT", body:{invitados:{
+      cambiar_modelo: $("#pmCambiar").checked, max_tokens: +$("#pmTokens").value,
+      rpm: +$("#pmRpm").value, system: $("#pmSystem").value }}});
+    toast("Permisos guardados"); cargarPanel();
+  }catch(e){ toast(e.message); }
+};
+
+$("#pullBtn").onclick = async () => {
+  const nombre = $("#pullNombre").value.trim().replace(/^ollama\s+(run|pull)\s+/, "");
+  if(!nombre) return;
+  try{ await api("api/admin/modelos/descargar", {method:"POST", body:{nombre}}); $("#pullNombre").value = ""; toast("Descargando " + nombre); cargarPanel(); }
+  catch(e){ toast(e.message); }
+};
+$("#pullNombre").addEventListener("keydown", e => { if(e.key === "Enter") $("#pullBtn").click(); });
+
+$("#invCrear").onclick = async () => {
+  const nombre = $("#invNombre").value.trim();
+  if(!nombre){ $("#invNombre").focus(); return; }
+  try{
+    const j = await api("api/admin/invitados", {method:"POST", body:{nombre, horas: +$("#invHoras").value}});
+    const enlace = location.origin + location.pathname + "?invitacion=" + encodeURIComponent(j.codigo);
+    const caja = $("#invNuevo");
+    caja.innerHTML = '<div class="codigo"><div class="fila" style="margin:0;justify-content:space-between"><b></b>' +
+      '<span><button class="btn" id="cpCod">Copiar código</button> <button class="btn" id="cpEnl">Copiar enlace</button></span></div>' +
+      '<p></p><p>Solo se muestra ahora. Sirve una vez y caduca ' + esc(hora(j.expira)) + '.</p></div>';
+    caja.querySelector("b").textContent = j.codigo;
+    caja.querySelector("p").textContent = enlace;
+    const copiar = (t, b) => { const ok = () => { b.textContent = "copiado"; };
+      navigator.clipboard && isSecureContext ? navigator.clipboard.writeText(t).then(ok, () => legacy(t, ok)) : legacy(t, ok); };
+    $("#cpCod").onclick = e => copiar(j.codigo, e.target);
+    $("#cpEnl").onclick = e => copiar(enlace, e.target);
+    $("#invNombre").value = "";
+    cargarPanel();
+  }catch(e){ toast(e.message); }
+};
+
+/* ------------------------- Rol ------------------------- */
+function aplicarRol(){
+  const admin = rol === "admin";
+  $("#cfgBtn").style.display = admin ? "" : "none";
+  $("#panelBtn").style.display = admin ? "" : "none";
+  if(!admin){ $("#cfg").classList.remove("on"); }
+  const tag = $("#rolTag");
+  if(invitado){
+    tag.style.display = "";
+    tag.textContent = "invitado · " + (invitado.nombre || "") + " · hasta " +
+      new Date(invitado.expira * 1000).toLocaleTimeString("es", {hour:"2-digit", minute:"2-digit"});
+  }
+}
+
 /* ------------------------- Arranque ------------------------- */
 function arrancarApp(){
+  aplicarRol();
   cargar();
   $("#temp").value = ajustes.temp; $("#tVal").textContent = (+ajustes.temp).toFixed(2);
   $("#maxt").value = ajustes.maxt; $("#mVal").textContent = ajustes.maxt;
@@ -866,6 +1337,7 @@ function arrancarApp(){
   if(!convs.length) crear(); else { actual = convs[0].id; pintarLista(); render(); }
   sincronizar();
   ping(); clearInterval(window._pg); window._pg = setInterval(ping, 5000);
+  api("api/modelos").then(pintarModeloActual).catch(() => {});
   autoSize(); marcarBoton();
   $("#ta").focus();
 }
@@ -887,8 +1359,17 @@ document.addEventListener("visibilitychange", () => { if(!document.hidden) sincr
     const j = await r.json();
     sysDefecto = j.system_prompt || "";
     servidorConv = j.conversations === true;
+    rol = j.rol || "admin";
+    invitado = j.invitado || null;
     if(j.auth_required) $("#outBtn").style.display = "";
-    if(j.auth_required && !j.authenticated){ mostrarLogin(); ping(); return; }
+    // Enlace de invitacion (?invitacion=CODIGO): se rellena y se quita de la barra de direcciones.
+    const codigo = new URLSearchParams(location.search).get("invitacion");
+    if(codigo) history.replaceState(null, "", location.pathname);
+    if(j.auth_required && (!j.authenticated || codigo)){
+      mostrarLogin(); ping();
+      if(codigo){ modoLogin(true); $("#pw").value = codigo; $("#loginForm").requestSubmit(); }
+      return;
+    }
   }catch(e){ /* sin backend: la UI arranca igual y el panel marcara "sin enlace" */ }
   arrancarApp();
 })();

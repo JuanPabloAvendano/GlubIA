@@ -36,6 +36,7 @@ def _config(monkeypatch, tmp_path, **env):
         "GLUBIA_PASS": PASS,
         "GLUBIA_FALSO_RETARDO": "0.005",
         "GLUBIA_LOG": "WARNING",
+        "GLUBIA_OLLAMA_URL": "off",          # sin Ollama real: el del equipo no debe colarse
     }
     base.update({k: str(v) for k, v in env.items()})
     for k, v in base.items():

@@ -12,22 +12,38 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import __version__
+from .ajustes import Ajustes
+from .api_admin import router as router_admin
 from .api_ui import router as router_ui
 from .api_v1 import ErrorAPI, respuesta_error
 from .api_v1 import router as router_v1
+from .catalogo import Catalogo, ModeloInvalido
 from .config import Config, cargar_config
 from .conversaciones import Conversaciones
+from .guardia import Auditoria
+from .invitados import Invitados
 from .motor import Motor, NoListo, Ocupado
 from .seguridad import COOKIE, Claves, Limitador, Sesiones, cargar_secreto, ip_cliente
 
 log = logging.getLogger("glubia")
 
 
+def crear_backend(cfg):
+    """Fabrica segun el motor de la Config: asi el motor puede cambiar de motor en caliente."""
+    if cfg.motor == "falso":
+        from .backend_falso import crear
+    elif cfg.motor == "ollama":
+        from .backend_ollama import crear
+    else:
+        from .backend_openvino import crear
+    return crear(cfg)
+
+
 class Estado:
     """Todo lo que comparten las rutas. Vive en app.state.glubia."""
 
     def __init__(self, cfg: Config, fabrica=None):
-        self.cfg = cfg
+        self.cfg_base = cfg
         try:
             cfg.data_dir.mkdir(parents=True, exist_ok=True)
             data_ok = True
@@ -35,8 +51,8 @@ class Estado:
             log.warning("no se pudo crear %s (%s): sin persistencia en disco", cfg.data_dir, exc)
             data_ok = False
 
-        self.sesiones = Sesiones(cargar_secreto(cfg.data_dir, cfg.base_dir), cfg.password,
-                                 cfg.auth, cfg.sesion_horas)
+        self.secreto = cargar_secreto(cfg.data_dir, cfg.base_dir)
+        self.sesiones = Sesiones(self.secreto, cfg.password, cfg.auth, cfg.sesion_horas)
         self.claves = Claves(cfg.data_dir / "claves.json", cfg.api_keys_env)
         self.conversaciones: Optional[Conversaciones] = None
         if cfg.conversaciones and data_ok:
@@ -45,19 +61,35 @@ class Estado:
             except Exception as exc:  # noqa: BLE001
                 log.warning("conversaciones en servidor desactivadas: %s", exc)
         self.fallos = Limitador()
+        self.ritmo = Limitador()                    # mensajes por minuto y reincidentes (invitados)
+        self.ajustes = Ajustes(cfg.data_dir / "ajustes.json", cfg)
+        self.catalogo = Catalogo(cfg)
+        self.invitados = Invitados(cfg.data_dir / "invitados.json")
+        self.auditoria = Auditoria(cfg.data_dir / "auditoria.jsonl")
 
-        if fabrica is None:
-            if cfg.motor == "falso":
-                from .backend_falso import crear as fabrica
-            else:
-                from .backend_openvino import crear as fabrica
-        self.motor = Motor(cfg, fabrica)
+        # El modelo elegido en el panel manda sobre el del entorno. Si no carga,
+        # el motor prueba el del entorno antes de rendirse (respaldo).
+        inicial = cfg
+        elegido = self.ajustes.get("modelo")
+        if elegido:
+            try:
+                inicial = self.catalogo.cfg_para(elegido, self.ajustes.todo())
+            except ModeloInvalido as exc:
+                log.warning("modelo guardado no valido (%s): uso el del entorno", exc)
+        self.motor = Motor(inicial, fabrica or crear_backend)
+        if inicial is not cfg:
+            self.motor.respaldo = cfg
+
+    @property
+    def cfg(self) -> Config:
+        """La Config del modelo cargado ahora (cambia al cambiar de modelo)."""
+        return self.motor.cfg
 
     def ip(self, request: Request) -> str:
         return ip_cliente(request, self.cfg.proxies)
 
     def quien(self, request: Request) -> Optional[str]:
-        """Identidad de quien llama: 'lan', 'sesion', 'clave:<nombre>' o None."""
+        """Identidad: 'lan', 'sesion' (admin), 'clave:<nombre>', 'invitado:<id>' o None."""
         if not self.cfg.auth:
             return "lan"
         auth = request.headers.get("authorization", "")
@@ -70,8 +102,11 @@ class Estado:
             nombre = self.claves.verificar(directa)
             if nombre:
                 return "clave:" + nombre
-        if self.sesiones.token_valido(request.cookies.get(COOKIE)):
+        rol = self.sesiones.leer_token(request.cookies.get(COOKIE))
+        if rol == "admin":
             return "sesion"
+        if rol and rol.startswith("invitado:") and self.invitados.activa(rol.split(":", 1)[1]):
+            return rol                     # se revisa en cada peticion: revocar corta al instante
         return None
 
 
@@ -188,13 +223,14 @@ def crear_app(cfg: Optional[Config] = None, fabrica=None, salir_si_falla: bool =
     @app.get("/readyz", include_in_schema=False)
     async def readyz():
         m = estado.motor.resumen()
-        cuerpo = {"status": m["estado"], "device": m["dispositivo"], "model": cfg.nombre_modelo,
+        cuerpo = {"status": m["estado"], "device": m["dispositivo"], "model": estado.cfg.nombre_modelo,
                   "queue": m["cola"], "version": __version__}
         if m["error"]:
             cuerpo["error"] = m["error"]
         return JSONResponse(cuerpo, status_code=200 if m["estado"] == "listo" else 503)
 
     app.include_router(router_ui)
+    app.include_router(router_admin)
     app.include_router(router_v1)
 
     # El ultimo en anadirse es el mas externo.

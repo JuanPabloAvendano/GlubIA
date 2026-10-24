@@ -78,6 +78,11 @@ class BackendOpenVINO:
                 log.warning("no se pudo usar %s: %s", dev, exc)
         raise RuntimeError(f"No se pudo cargar el modelo desde {ruta}: {ultimo}")
 
+    def cerrar(self) -> None:
+        """Suelta el pipeline (y su memoria de GPU) antes de cargar otro modelo."""
+        self.tok = None
+        self.pipe = None
+
     # ------------------------------------------------------------ tokens
 
     def contar(self, texto: str) -> int:

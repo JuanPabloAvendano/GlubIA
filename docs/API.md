@@ -69,6 +69,29 @@ Las de la v1 siguen igual (`/api/chat`, `/api/chat/stream`, `/api/login`, `/api/
 - `GET /api/conversations`, `PUT /api/conversations/{id}`, `DELETE /api/conversations/{id}`:
   historial sincronizado (`GLUBIA_CONVERSACIONES=0` lo desactiva).
 
+- El evento final del stream (y la respuesta de `/api/chat`) trae `firma`: el cliente la devuelve en
+  cada turno del asistente del `history`. Para un invitado, los turnos sin firma válida se descartan.
+
+## Modelos, panel de admin e invitados
+
+| Ruta | Quién | Qué |
+|---|---|---|
+| `GET /api/modelos` | admin, invitado | catálogo (Ollama + carpetas OpenVINO), activo, estado del cambio. El invitado ve solo el activo y los permitidos |
+| `POST /api/modelos/activar` `{"id"}` | admin, invitado con permiso | carga ese modelo en caliente; si falla, vuelve al anterior |
+| `GET /api/admin/estado` | admin | modelos, ajustes, descargas, invitaciones y auditoría |
+| `PUT /api/admin/ajustes` | admin | `{"ollama":{"gpu","pensar","keep"}, "openvino":{"device"}, "invitados":{"modelos","cambiar_modelo","max_tokens","rpm","system"}}` (parcial) |
+| `POST /api/admin/modelos/descargar` `{"nombre"}` | admin | `ollama pull` en segundo plano; el progreso sale en `/api/admin/estado` |
+| `DELETE /api/admin/modelos/ollama:<nombre>` | admin | `ollama rm` (no el activo) |
+| `POST /api/admin/invitados` `{"nombre","horas"}` | admin | crea una invitación; el `codigo` solo viene en esta respuesta |
+| `DELETE /api/admin/invitados/{id}` | admin | revoca al instante |
+
+Ids de modelo: `ollama:usuario/modelo:etiqueta` y `openvino:<carpeta en GLUBIA_MODELOS>`. El modelo
+elegido se guarda en `<GLUBIA_DATA>/ajustes.json` y manda sobre `GLUBIA_MOTOR`/`GLUBIA_OLLAMA_MODELO`.
+
+Invitado: `POST /api/login` con `{"codigo": "XXXX-XXXX-XXXX-XXXX"}` (un solo uso; la cookie caduca con
+la invitación). O el enlace `/?invitacion=CODIGO`. Los invitados no usan `/v1`, ni conversaciones en
+el servidor, ni el panel.
+
 ## Estados y errores comunes
 
 | Código | Cuándo | Qué hacer |

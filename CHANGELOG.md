@@ -13,6 +13,10 @@ La seccion de cada version es el texto de su Release en GitHub (lo extrae `relea
 - `scripts/evaluar.py` evalua solo la API privada; los casos del portafolio se fueron con el.
 
 ### Anadido
+- Panel de admin (▣ Panel) y selector de modelo en la cabecera: cambiar en caliente entre modelos de Ollama y OpenVINO (si el nuevo no carga, vuelve al anterior), descargar y borrar modelos de Ollama, GPU/CPU, «pensar» y memoria de Ollama, dispositivo de OpenVINO. Lo elegido se guarda en `ajustes.json`.
+- Invitados: invitaciones de un solo uso con caducidad, revocables al instante; el admin decide qué modelos pueden elegir, su largo máximo, su ritmo y sus instrucciones.
+- Defensas contra prompt injection para invitados (`glubia/guardia.py`): prompt de sistema fijado por el servidor con politica de seguridad, historial firmado con HMAC, vigia de fugas (canario y frases de la politica), limpieza de caracteres invisibles, deteccion de frases tipicas (ES/EN/Base64), limite de ritmo y pausa a reincidentes. Auditoria en `auditoria.jsonl`.
+- Motor Ollama (`GLUBIA_MOTOR=ollama`): usa cualquier modelo de ollama.com sin convertirlo. El modelo es una linea del `.env` (`GLUBIA_OLLAMA_MODELO`). Servicio `ollama` en compose (perfil `ollama`) con GPU Intel por Vulkan; glubia sigue sin salida a internet.
 - Perfil `tunel-rapido` en compose: tunel trycloudflare a la UI que arranca solo con el equipo, sin cuenta ni token.
 - `scripts/vigilar.sh`: panel en la terminal con estado de servicios, modelo, memoria y enlaces publicos.
 

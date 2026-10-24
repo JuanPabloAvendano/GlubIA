@@ -64,21 +64,32 @@ class Sesiones:
         mac = hmac.new(self.secreto, payload.encode("utf-8"), hashlib.sha256).digest()
         return payload + "." + base64.urlsafe_b64encode(mac).decode("ascii").rstrip("=")
 
-    def crear_token(self) -> str:
-        expira = int(time.time()) + self.horas * 3600
-        return self._firmar(f"{expira}:{secrets.token_urlsafe(8)}")
+    def crear_token(self, invitado: Optional[str] = None, expira: Optional[int] = None) -> str:
+        """Token del admin, o de un invitado (con el id de su invitacion y su caducidad)."""
+        expira = expira or int(time.time()) + self.horas * 3600
+        payload = f"{expira}:{secrets.token_urlsafe(8)}"
+        if invitado:
+            payload += ":inv:" + invitado
+        return self._firmar(payload)
 
-    def token_valido(self, token: Optional[str]) -> bool:
+    def leer_token(self, token: Optional[str]) -> Optional[str]:
+        """'admin', 'invitado:<id>' o None. Los tokens de la v1 (sin rol) son de admin."""
         if not token:
-            return False
+            return None
         try:
             payload, _ = token.rsplit(".", 1)
-            expira = int(payload.split(":", 1)[0])
+            partes = payload.split(":")
+            expira = int(partes[0])
         except ValueError:
-            return False
-        if not hmac.compare_digest(self._firmar(payload), token):
-            return False
-        return expira > time.time()
+            return None
+        if not hmac.compare_digest(self._firmar(payload), token) or expira <= time.time():
+            return None
+        if len(partes) == 4 and partes[2] == "inv":
+            return "invitado:" + partes[3]
+        return "admin" if len(partes) == 2 else None
+
+    def token_valido(self, token: Optional[str]) -> bool:
+        return self.leer_token(token) == "admin"
 
     def password_correcta(self, intento: str) -> bool:
         return hmac.compare_digest(intento.encode("utf-8"), self.password.encode("utf-8"))

@@ -67,6 +67,12 @@ def _ruta(nombre: str, defecto: Path) -> Path:
     return Path(valor).expanduser() if valor else defecto
 
 
+def _url_ollama() -> str:
+    """URL de Ollama; "off" la desactiva (sin catalogo de Ollama, p. ej. en las pruebas)."""
+    valor = _texto("GLUBIA_OLLAMA_URL", "http://127.0.0.1:11434")
+    return "" if valor.lower() in ("off", "0", "no") else valor.rstrip("/")
+
+
 @dataclass(frozen=True)
 class Config:
     base_dir: Path
@@ -86,6 +92,12 @@ class Config:
     max_seg: int
     cola_max: int
     cache_ov: bool
+    # Ollama (GLUBIA_MOTOR=ollama)
+    ollama_url: str
+    ollama_modelo: str
+    ollama_keep: str
+    ollama_pensar: bool
+    ollama_gpu: bool
     # Red y acceso
     proxies: Tuple[Red, ...]
     api_keys_env: Tuple[str, ...]
@@ -95,6 +107,12 @@ class Config:
     telemetria_ov: bool
     log_nivel: str
     falso_retardo: float
+    falso_nombre: str = "glubia-falso"
+
+    @property
+    def modelos_dir(self) -> Path:
+        """Carpeta con los modelos OpenVINO (la del modelo configurado)."""
+        return self.model_path.parent
 
     @property
     def ui_path(self) -> Path:
@@ -102,13 +120,17 @@ class Config:
 
     @property
     def nombre_modelo(self) -> str:
-        return "glubia-falso" if self.motor == "falso" else self.model_path.name
+        if self.motor == "falso":
+            return self.falso_nombre
+        if self.motor == "ollama":
+            return self.ollama_modelo
+        return self.model_path.name
 
 
 def cargar_config() -> Config:
     motor = _texto("GLUBIA_MOTOR", "openvino").lower()
-    if motor not in ("openvino", "falso"):
-        raise SystemExit("GLUBIA_MOTOR debe ser 'openvino' o 'falso'")
+    if motor not in ("openvino", "ollama", "falso"):
+        raise SystemExit("GLUBIA_MOTOR debe ser 'openvino', 'ollama' o 'falso'")
 
     return Config(
         base_dir=BASE_DIR,
@@ -127,6 +149,11 @@ def cargar_config() -> Config:
         max_seg=_entero("GLUBIA_MAX_SEG", 300, 10, 3600),
         cola_max=_entero("GLUBIA_COLA", 8, 1, 200),
         cache_ov=_bool("GLUBIA_CACHE_OV", True),
+        ollama_url=_url_ollama(),
+        ollama_modelo=_texto("GLUBIA_OLLAMA_MODELO", "huihui_ai/qwen3.5-abliterated:4B"),
+        ollama_keep=_texto("GLUBIA_OLLAMA_KEEP", "-1"),
+        ollama_pensar=_bool("GLUBIA_OLLAMA_PENSAR", False),
+        ollama_gpu=_bool("GLUBIA_OLLAMA_GPU", True),
         proxies=_redes("GLUBIA_PROXIES"),
         api_keys_env=_lista("GLUBIA_API_KEYS"),
         conversaciones=_bool("GLUBIA_CONVERSACIONES", True),

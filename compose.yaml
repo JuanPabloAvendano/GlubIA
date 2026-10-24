@@ -4,6 +4,7 @@
 #    cp .env.example .env        # y editalo
 #    docker compose up -d        # GlubIA (UI + API) detras de Caddy
 #    docker compose --profile tunel up -d    # + tunel Cloudflare con tu dominio
+#    COMPOSE_PROFILES=ollama en .env         # + Ollama como motor (GLUBIA_MOTOR=ollama)
 #    COMPOSE_PROFILES=tunel-rapido en .env   # + tunel rapido sin cuenta (URL aleatoria)
 #    scripts/vigilar.sh                      # estado y enlaces en vivo
 #
@@ -14,6 +15,8 @@
 #
 #  * glubia vive SOLO en una red interna sin acceso a internet: aunque
 #    quisiera, no puede enviar nada fuera. Solo Caddy llega a el.
+#  * Con GLUBIA_MOTOR=ollama, glubia habla con el servicio ollama por la red
+#    interna. Ollama tiene ademas la red "salida" para descargar modelos.
 #  * :8081 = GlubIA privado (tu UI y la API completa). No lo publiques en
 #    el tunel sin Cloudflare Access delante (ver docs/OMARCHY.md).
 #  * El portafolio ya no vive aqui: es un repo aparte (~/Work/portafolio).
@@ -37,6 +40,12 @@ services:
       GLUBIA_TITULO: ${GLUBIA_TITULO:-GlubIA}
       GLUBIA_API_KEYS: ${GLUBIA_API_KEYS:-}
       GLUBIA_DEVICE: ${GLUBIA_DEVICE:-GPU}
+      GLUBIA_MOTOR: ${GLUBIA_MOTOR:-openvino}
+      GLUBIA_OLLAMA_URL: http://ollama:11434
+      GLUBIA_OLLAMA_MODELO: ${GLUBIA_OLLAMA_MODELO:-huihui_ai/qwen3.5-abliterated:4B}
+      GLUBIA_OLLAMA_KEEP: ${GLUBIA_OLLAMA_KEEP:--1}
+      GLUBIA_OLLAMA_PENSAR: ${GLUBIA_OLLAMA_PENSAR:-0}
+      GLUBIA_OLLAMA_GPU: ${GLUBIA_OLLAMA_GPU:-1}   # valor inicial; luego manda el panel
       GLUBIA_CTX: ${GLUBIA_CTX:-8192}
       GLUBIA_MAX_TOKENS: ${GLUBIA_MAX_TOKENS:-4096}
       GLUBIA_MAX_SEG: ${GLUBIA_MAX_SEG:-300}
@@ -54,11 +63,42 @@ services:
       - /dev/dri:/dev/dri                   # GPU Intel (compose.cpu.yaml lo quita)
     group_add:
       - "${RENDER_GID:-989}"                # GID del grupo de /dev/dri/renderD128 en el anfitrion
+    depends_on:
+      ollama: { condition: service_started, required: false }   # solo con el perfil ollama
     mem_limit: ${GLUBIA_MEM:-12g}
     stop_grace_period: 20s
     networks:
       interna:
         ipv4_address: 172.31.0.10
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # Motor Ollama (GLUBIA_MOTOR=ollama + COMPOSE_PROFILES=ollama). Cambiar de
+  # modelo:  docker compose exec ollama ollama pull <usuario/modelo:etiqueta>
+  # y luego GLUBIA_OLLAMA_MODELO en .env + docker compose up -d.
+  ollama:
+    image: ollama/ollama:${OLLAMA_TAG:-0.40.9}
+    profiles: ["ollama"]
+    restart: unless-stopped
+    user: "${OLLAMA_UID:-1000}:${OLLAMA_GID:-1000}"   # los modelos quedan a tu nombre, no de root
+    environment:
+      HOME: /tmp
+      OLLAMA_MODELS: /modelos
+      OLLAMA_VULKAN: ${OLLAMA_GPU:-1}           # GPU Intel disponible por Vulkan (compose.cpu.yaml lo apaga)
+      OLLAMA_IGPU_ENABLE: ${OLLAMA_GPU:-1}      # sin esto Ollama descarta las GPU integradas
+    volumes:
+      - ${OLLAMA_MODELOS:-./modelos/ollama}:/modelos
+    ports:
+      - "127.0.0.1:${PUERTO_OLLAMA:-11435}:11434"   # OLLAMA_HOST=127.0.0.1:11435 ollama list
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID:-989}"
+    mem_limit: ${OLLAMA_MEM:-10g}
+    networks:
+      interna:
+      salida:
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -125,6 +165,7 @@ networks:
   borde:
     ipam:
       config: [{ subnet: 172.30.0.0/24 }]
+  salida:                                   # solo ollama: descargar modelos
 
 volumes:
   glubia-datos:

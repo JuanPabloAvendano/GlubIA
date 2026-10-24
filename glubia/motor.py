@@ -31,7 +31,9 @@ from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
 log = logging.getLogger("glubia.motor")
 
+PRIORIDAD_CONTROL = -1  # cambios de modelo: antes que cualquier pregunta en cola
 PRIORIDAD_PRIVADA = 0   # tu UI y tus claves de API
+PRIORIDAD_INVITADO = 1  # invitados: el admin siempre pasa delante
 
 
 class Ocupado(Exception):
@@ -119,7 +121,9 @@ class Motor:
         self._cola: queue.PriorityQueue = queue.PriorityQueue()
         self._seq = itertools.count()
         self._lock = threading.Lock()
-        self._esperando = {PRIORIDAD_PRIVADA: 0}
+        self._esperando = {PRIORIDAD_PRIVADA: 0, PRIORIDAD_INVITADO: 0}
+        self.respaldo = None              # Config a probar si la de arranque no carga
+        self.cambio: Dict[str, object] = {}   # ultimo cambio de modelo pedido (para el panel)
         self._activos: Dict[str, Trabajo] = {}
         self._hilo = threading.Thread(target=self._bucle, name="glubia-motor", daemon=True)
         self.salir_si_falla = True
@@ -164,10 +168,11 @@ class Motor:
             self._cola.put((prioridad, next(self._seq), trabajo))
         return trabajo, delante
 
-    def cancelar(self, trabajo_id: str) -> bool:
+    def cancelar(self, trabajo_id: str, origen: Optional[str] = None) -> bool:
+        """origen: si se da, solo cancela trabajos de ese origen (un invitado no para los ajenos)."""
         with self._lock:
             trabajo = self._activos.get(trabajo_id)
-        if trabajo is None:
+        if trabajo is None or (origen is not None and trabajo.origen != origen):
             return False
         trabajo.cancelar("solicitud")
         return True
@@ -188,16 +193,61 @@ class Motor:
 
     # ------------------------------------------------------------ hilo del motor
 
-    def _bucle(self) -> None:
+    def cambiar(self, cfg_nueva, quien: str = "admin") -> None:
+        """Pide cargar otro modelo. Se hace en el hilo del motor, al terminar la
+        respuesta en curso y antes de las que esperan. Si falla, vuelve al anterior."""
+        self.cambio = {"modelo": getattr(cfg_nueva, "nombre_modelo", "?"), "estado": "pendiente",
+                       "quien": quien, "error": None, "ts": time.time()}
+        self._cola.put((PRIORIDAD_CONTROL, next(self._seq), ("cambiar", cfg_nueva)))
+
+    def _cargar(self, cfg) -> None:
+        self.backend = self._fabrica(cfg)
+        self.cfg = cfg
+        self.dispositivo = getattr(self.backend, "dispositivo", "?")
+        self.estado = "listo"
+        self.error = None
+        log.info("modelo %s listo en %s", getattr(cfg, "nombre_modelo", "?"), self.dispositivo)
+
+    def _soltar(self) -> None:
+        """Libera el modelo actual (memoria de la GPU/RAM) antes de cargar otro."""
+        b, self.backend = self.backend, None
+        cerrar = getattr(b, "cerrar", None)
+        if cerrar is not None:
+            try:
+                cerrar()
+            except Exception as exc:  # noqa: BLE001
+                log.warning("no se pudo liberar el modelo anterior: %s", exc)
+        del b
+        import gc
+        gc.collect()
+
+    def _hacer_cambio(self, cfg_nueva) -> None:
+        anterior = self.cfg
+        self.estado, self.dispositivo = "cargando", None
+        self.cambio["estado"] = "cargando"
+        self._soltar()
         try:
-            self.backend = self._fabrica(self.cfg)
-            self.dispositivo = getattr(self.backend, "dispositivo", "?")
-            self.estado = "listo"
-            log.info("modelo listo en %s", self.dispositivo)
+            self._cargar(cfg_nueva)
+            self.cambio["estado"] = "listo"
         except Exception as exc:  # noqa: BLE001
-            self.estado = "error"
-            self.error = str(exc)
-            log.error("no se pudo cargar el modelo: %s", exc)
+            log.error("no se pudo cargar %s: %s. Vuelvo al anterior.", getattr(cfg_nueva, "nombre_modelo", "?"), exc)
+            self.cambio.update(estado="error", error=str(exc))
+            try:
+                self._cargar(anterior)
+            except Exception as exc2:  # noqa: BLE001
+                self.estado, self.error = "error", f"{exc} / y el anterior tampoco carga: {exc2}"
+
+    def _bucle(self) -> None:
+        candidatos = [self.cfg] + ([self.respaldo] if self.respaldo is not None else [])
+        for cfg in candidatos:
+            try:
+                self._cargar(cfg)
+                break
+            except Exception as exc:  # noqa: BLE001
+                log.error("no se pudo cargar el modelo: %s", exc)
+                self.estado, self.error = "error", str(exc)
+                self._soltar()
+        if self.estado != "listo":
             if self.salir_si_falla:
                 # Sin modelo no hay servicio: salir para que Docker reinicie y
                 # el error quede a la vista en `docker compose logs`.
@@ -208,6 +258,9 @@ class Motor:
             _, _, trabajo = self._cola.get()
             if trabajo is None:
                 break
+            if isinstance(trabajo, tuple):          # orden de control: ("cambiar", cfg)
+                self._hacer_cambio(trabajo[1])
+                continue
             with self._lock:
                 if trabajo.iniciado:   # cancelado mientras esperaba: ya se descontó y se cerró
                     continue

@@ -7,3 +7,9 @@ services:
     group_add: !reset []
     environment:
       GLUBIA_DEVICE: CPU
+  ollama:
+    devices: !reset []
+    group_add: !reset []
+    environment:
+      OLLAMA_VULKAN: "0"
+      OLLAMA_IGPU_ENABLE: "0"

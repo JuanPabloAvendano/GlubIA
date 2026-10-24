@@ -44,6 +44,23 @@ OpenVINO.
 
 **Sin modelo, para probar la UI o la API:** `GLUBIA_MOTOR=falso`.
 
+**Cambiar de modelo:** desde el selector de la cabecera o desde **▣ Panel** (descargar, borrar,
+GPU/CPU, «pensar», qué modelos pueden usar los invitados). Se cambia en caliente entre modelos de
+Ollama y de OpenVINO, y lo elegido sobrevive a los reinicios. Lo de abajo es solo la configuración
+inicial.
+
+**Con un modelo de Ollama** (cualquiera de ollama.com, sin convertirlo a OpenVINO): en `.env`
+pon `GLUBIA_MOTOR=ollama`, añade `ollama` a `COMPOSE_PROFILES` y elige el modelo:
+
+```bash
+docker compose exec ollama ollama pull huihui_ai/qwen3.5-abliterated:4B   # lo de "ollama run ..."
+# .env:  GLUBIA_OLLAMA_MODELO=huihui_ai/qwen3.5-abliterated:4B
+docker compose up -d
+```
+
+Ollama corre en su propio contenedor con la GPU Intel por Vulkan. Como no expone su
+tokenizer, el recorte del historial estima los tokens (3 caracteres por token).
+
 ## Qué cambió en la 2.0
 
 El diagnóstico completo, con cómo se reprodujo cada fallo, está en `docs/PROBLEMAS.md`. Lo esencial:
@@ -66,7 +83,11 @@ El diagnóstico completo, con cómo se reprodujo cada fallo, está en `docs/PROB
 | `GLUBIA_AUTH` | `1` | `0` desactiva login y claves (solo LAN de confianza) |
 | `GLUBIA_MODEL` | `./modelo_qwen_7b_ov` | carpeta del modelo |
 | `GLUBIA_DEVICE` | `GPU` | `GPU`, `CPU`, `AUTO`; si falla la GPU cae a CPU |
-| `GLUBIA_MOTOR` | `openvino` | `falso` = respuestas simuladas, sin modelo |
+| `GLUBIA_MOTOR` | `openvino` | `ollama` = modelo servido por Ollama; `falso` = respuestas simuladas |
+| `GLUBIA_OLLAMA_MODELO` | `huihui_ai/qwen3.5-abliterated:4B` | modelo de Ollama (`usuario/modelo:etiqueta`) |
+| `GLUBIA_OLLAMA_URL` | `http://127.0.0.1:11434` | dónde está Ollama (en compose: `http://ollama:11434`) |
+| `GLUBIA_OLLAMA_KEEP` | `-1` | cuánto se queda el modelo en memoria (`-1` siempre, `30m`...) |
+| `GLUBIA_OLLAMA_PENSAR` | `0` | `1` deja razonar a los modelos que piensan (más lento) |
 | `GLUBIA_PORT` / `GLUBIA_HOST` | `11434` / `0.0.0.0` | dónde escucha |
 | `GLUBIA_DATA` | `./datos` | secreto, conversaciones, claves, caché |
 | `GLUBIA_HORAS` | `8` | duración de la sesión |
@@ -91,6 +112,27 @@ El diagnóstico completo, con cómo se reprodujo cada fallo, está en `docs/PROB
   máquina) o `X-Real-IP` desde `GLUBIA_PROXIES` (Caddy). Nadie en la LAN puede falsearla.
 - Sin rutas públicas: todo salvo `/healthz` y `/readyz` exige sesión o clave.
 - En el contenedor, GlubIA vive en una red interna sin salida a internet.
+
+### Invitados y prompt injection
+
+Desde **▣ Panel** creas invitaciones de un solo uso con caducidad. Las defensas están basadas en el
+*OWASP LLM Prompt Injection Prevention Cheat Sheet*, en Beurer-Kellner et al. (2025), en *The
+Instruction Hierarchy* y en la guía de Anthropic, y la regla es que **ninguna defensa dentro del prompt
+es una frontera**. Las fronteras están fuera del modelo:
+
+- **Mínimo privilegio:** el modelo no tiene herramientas, ni red, ni acceso a ajustes. Cambiar de modelo,
+  permisos o invitaciones solo se hace desde endpoints de admin; una inyección solo puede producir texto.
+- **El servidor fija el prompt de sistema** del invitado (política de seguridad + el tuyo) e ignora el
+  que mande el navegador. También fija temperatura y largo máximo.
+- **Historial firmado (HMAC):** un invitado no puede inventar turnos del asistente.
+- **Vigía de fugas:** canario al principio del prompt de sistema y detección de cualquier frase de 6
+  palabras copiada de la política. La respuesta se corta y queda registrada.
+- **Salida no confiable:** la UI escapa el HTML y no carga imágenes, así que no hay exfiltración sin clic.
+- Detección (sin bloquear) de frases típicas en ES/EN, normalizadas y en Base64; los caracteres
+  invisibles se quitan; hay límite de mensajes por minuto y pausa de 10 min a quien acumule 3 intentos.
+
+Todo queda en `<GLUBIA_DATA>/auditoria.jsonl`, visible en el panel. Tu prompt para invitados **no es
+secreto**: el modelo puede parafrasearlo, así que no pongas ahí nada privado.
 
 ## Detalles técnicos que no hay que redescubrir
 
